@@ -4,7 +4,7 @@ import { supabase } from '@/lib/db/supabase';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -15,11 +15,13 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     // Check if user is the host
     const { data: meeting } = await supabase
       .from('meetings')
       .select('host_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (!meeting || meeting.host_id !== user.userId) {
@@ -32,7 +34,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('applications')
       .select('*, users(id, nickname, profile_image_url, trust_score, trust_level)')
-      .eq('meeting_id', params.id)
+      .eq('meeting_id', id)
       .order('applied_at', { ascending: false });
 
     if (error) {
@@ -54,7 +56,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -65,11 +67,13 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
+
     // Check if meeting exists and is open
     const { data: meeting, error: meetingError } = await supabase
       .from('meetings')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (meetingError || !meeting) {
@@ -90,7 +94,7 @@ export async function POST(
     const { data: existingApplication } = await supabase
       .from('applications')
       .select('id')
-      .eq('meeting_id', params.id)
+      .eq('meeting_id', id)
       .eq('user_id', user.userId)
       .single();
 
@@ -105,7 +109,7 @@ export async function POST(
     const { count: approvedCount } = await supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
-      .eq('meeting_id', params.id)
+      .eq('meeting_id', id)
       .eq('status', 'approved');
 
     if ((approvedCount || 0) >= meeting.max_participants) {
@@ -132,7 +136,7 @@ export async function POST(
     const { data, error } = await supabase
       .from('applications')
       .insert({
-        meeting_id: params.id,
+        meeting_id: id,
         user_id: user.userId,
         status: 'pending',
       })

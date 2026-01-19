@@ -4,7 +4,7 @@ import { supabase } from '@/lib/db/supabase';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -15,11 +15,13 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
+
     // Get application and verify host
     const { data: application, error: appError } = await supabase
       .from('applications')
       .select('*, meetings(host_id)')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (appError || !application) {
@@ -44,7 +46,7 @@ export async function PUT(
         status: 'rejected',
         reviewed_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
