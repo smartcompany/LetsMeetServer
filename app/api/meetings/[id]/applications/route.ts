@@ -33,7 +33,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('applications')
-      .select('*, users(id, nickname, profile_image_url, trust_score, trust_level)')
+      .select('*, letsmeet_users(id, nickname, profile_image_url, trust_score)')
       .eq('meeting_id', id)
       .order('applied_at', { ascending: false });
 

@@ -13,33 +13,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Supabase에서 사용자 찾기 (Firebase UID 또는 custom claims의 userId로)
+    // Supabase에서 사용자 찾기 (Firebase UID를 user_id로 사용)
     let { data, error } = await supabase
-      .from('users')
+      .from('letsmeet_users')
       .select('*')
-      .eq('id', authUser.userId)
+      .eq('user_id', authUser.firebaseUid)
       .single();
-
-    // 사용자를 찾지 못했으면 Firebase UID로 kakao_id로 검색 시도
-    if (error || !data) {
-      const { auth } = getFirebaseAdmin();
-      const firebaseUser = await auth.getUser(authUser.firebaseUid);
-      const customClaims = firebaseUser.customClaims || {};
-      const kakaoId = customClaims.kakaoId;
-      
-      if (kakaoId) {
-        const { data: kakaoUser, error: kakaoError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('kakao_id', kakaoId)
-          .single();
-        
-        if (kakaoUser) {
-          data = kakaoUser;
-          error = null;
-        }
-      }
-    }
 
     // 사용자가 없으면 404 반환 (프로필 설정 완료 시 생성됨)
     if (error || !data) {
@@ -50,12 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      id: data.id,
-      phone_number: data.phone_number,
+      id: data.user_id, // user_id를 id로 반환 (클라이언트 호환성)
+      user_id: data.user_id,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
       trust_score: data.trust_score,
-      trust_level: data.trust_level,
       interests: data.interests,
       created_at: data.created_at,
       updated_at: data.updated_at,
@@ -112,33 +90,28 @@ export async function PUT(request: NextRequest) {
 
     // 기존 사용자 확인
     let { data: existingUser, error: findError } = await supabase
-      .from('users')
+      .from('letsmeet_users')
       .select('*')
-      .eq('id', authUser.userId)
+      .eq('user_id', authUser.firebaseUid)
       .single();
 
     let data;
     
     if (findError || !existingUser) {
-      // 사용자가 없으면 생성 (UUID 자동 생성)
+      // 사용자가 없으면 생성 (Firebase UID를 user_id로 사용)
       const userData: any = {
+        user_id: authUser.firebaseUid, // Firebase UID를 user_id로 사용
         nickname: body.nickname.trim(),
         interests: body.interests,
         trust_score: 70,
-        trust_level: 'stable',
-        phone_number: null,
       };
 
       if (body.profile_image_url) {
         userData.profile_image_url = body.profile_image_url;
       }
 
-      if (kakaoId) {
-        userData.kakao_id = kakaoId;
-      }
-
       const { data: newUser, error: createError } = await supabase
-        .from('users')
+        .from('letsmeet_users')
         .insert(userData)
         .select()
         .single();
@@ -150,13 +123,6 @@ export async function PUT(request: NextRequest) {
           { status: 500 }
         );
       }
-      
-      // 생성된 UUID를 Firebase custom claims에 userId로 저장
-      const { auth } = getFirebaseAdmin();
-      await auth.setCustomUserClaims(authUser.firebaseUid, {
-        ...customClaims,
-        userId: newUser.id,
-      });
       
       data = newUser;
     } else {
@@ -171,9 +137,9 @@ export async function PUT(request: NextRequest) {
       }
 
       const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
+        .from('letsmeet_users')
         .update(updateData)
-        .eq('id', authUser.userId)
+        .eq('user_id', authUser.firebaseUid)
         .select()
         .single();
 
@@ -192,13 +158,12 @@ export async function PUT(request: NextRequest) {
 
 
     return NextResponse.json({
-      id: data.id,
+      id: data.user_id,
+      user_id: data.user_id,
       phone_number: data.phone_number,
-      kakao_id: data.kakao_id,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
       trust_score: data.trust_score,
-      trust_level: data.trust_level,
       interests: data.interests,
       created_at: data.created_at,
       updated_at: data.updated_at,

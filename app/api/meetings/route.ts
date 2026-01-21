@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const interests = searchParams.get('interests');
 
     let query = supabase
-      .from('meetings')
+      .from('letsmeet_meetings')
       .select('*')
       .eq('status', 'open')
       .gte('meeting_date', new Date().toISOString())
@@ -58,9 +58,9 @@ export async function POST(request: NextRequest) {
 
     // Check user trust score and hosting limits
     const { data: userData } = await supabase
-      .from('users')
-      .select('trust_score, trust_level')
-      .eq('id', user.userId)
+      .from('letsmeet_users')
+      .select('trust_score')
+      .eq('user_id', user.firebaseUid)
       .single();
 
     if (!userData || userData.trust_score < 30) {
@@ -104,9 +104,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from('meetings')
+      .from('letsmeet_meetings')
       .insert({
-        host_id: user.userId,
+        host_id: user.firebaseUid,
         title,
         description,
         meeting_date,
