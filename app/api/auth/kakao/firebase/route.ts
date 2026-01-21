@@ -42,14 +42,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!user) {
-      // Create new user in Supabase
+      // Create new user in Supabase (only store kakao_id, minimal info)
       const { data: newUser, error: createError } = await supabase
         .from('users')
         .insert({
           kakao_id: kakaoId,
           phone_number: null,
-          nickname,
-          email: email || null,
+          nickname, // Only for initial display, user can change later
           trust_score: 70,
           trust_level: 'stable',
           interests: [],

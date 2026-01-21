@@ -1,7 +1,8 @@
 // User types
 export interface User {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
+  kakao_id?: string | null; // Only store kakao account id (minimal info)
   nickname: string;
   profile_image_url?: string;
   trust_score: number;
