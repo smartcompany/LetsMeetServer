@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,60 +13,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Firebase UID나 이메일로 사용자 찾기
+    // Supabase에서 사용자 찾기 (Firebase UID 또는 custom claims의 userId로)
     let { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', authUser.userId)
       .single();
 
-    // Supabase 사용자가 없으면 Firebase 정보로 생성
+    // 사용자를 찾지 못했으면 Firebase UID로 kakao_id로 검색 시도
     if (error || !data) {
-      // 이메일로 다시 시도
-      if (authUser.email) {
-        const emailResult = await supabase
+      const { auth } = getFirebaseAdmin();
+      const firebaseUser = await auth.getUser(authUser.firebaseUid);
+      const customClaims = firebaseUser.customClaims || {};
+      const kakaoId = customClaims.kakaoId;
+      
+      if (kakaoId) {
+        const { data: kakaoUser, error: kakaoError } = await supabase
           .from('users')
           .select('*')
-          .eq('email', authUser.email)
+          .eq('kakao_id', kakaoId)
           .single();
         
-        if (emailResult.data) {
-          data = emailResult.data;
+        if (kakaoUser) {
+          data = kakaoUser;
           error = null;
-        } else {
-          // 새 사용자 생성
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              phone_number: null,
-              email: authUser.email,
-              nickname: authUser.email?.split('@')[0] || '사용자',
-              trust_score: 70,
-              trust_level: 'stable',
-              interests: [],
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            return NextResponse.json(
-              { error: 'Failed to create user' },
-              { status: 500 }
-            );
-          }
-          data = newUser;
         }
-      } else {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
       }
     }
 
+    // 사용자가 없으면 404 반환 (프로필 설정 완료 시 생성됨)
     if (error || !data) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User not found. Please complete profile setup.' },
         { status: 404 }
       );
     }
@@ -93,8 +72,8 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const user = await verifyToken(request);
-    if (!user) {
+    const authUser = await verifyToken(request);
+    if (!authUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -102,37 +81,120 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const updateData: any = {};
+    
+    // Firebase custom claims에서 kakaoId 가져오기
+    const { auth } = getFirebaseAdmin();
+    const firebaseUser = await auth.getUser(authUser.firebaseUid);
+    const customClaims = firebaseUser.customClaims || {};
+    const kakaoId = customClaims.kakaoId;
 
-    if (body.nickname) updateData.nickname = body.nickname;
-    if (body.profile_image_url) updateData.profile_image_url = body.profile_image_url;
-    if (body.interests) {
-      if (body.interests.length > 3) {
-        return NextResponse.json(
-          { error: 'Maximum 3 interests allowed' },
-          { status: 400 }
-        );
-      }
-      updateData.interests = body.interests;
-    }
-
-    const { data, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', user.userId)
-      .select()
-      .single();
-
-    if (error) {
+    // 필수 필드 검증
+    if (!body.nickname || body.nickname.trim().length < 2) {
       return NextResponse.json(
-        { error: 'Failed to update user' },
-        { status: 500 }
+        { error: 'Nickname is required and must be at least 2 characters' },
+        { status: 400 }
       );
     }
+
+    if (!body.interests || body.interests.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one interest is required' },
+        { status: 400 }
+      );
+    }
+
+    if (body.interests.length > 3) {
+      return NextResponse.json(
+        { error: 'Maximum 3 interests allowed' },
+        { status: 400 }
+      );
+    }
+
+    // 기존 사용자 확인
+    let { data: existingUser, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.userId)
+      .single();
+
+    let data;
+    
+    if (findError || !existingUser) {
+      // 사용자가 없으면 생성 (UUID 자동 생성)
+      const userData: any = {
+        nickname: body.nickname.trim(),
+        interests: body.interests,
+        trust_score: 70,
+        trust_level: 'stable',
+        phone_number: null,
+      };
+
+      if (body.profile_image_url) {
+        userData.profile_image_url = body.profile_image_url;
+      }
+
+      if (kakaoId) {
+        userData.kakao_id = kakaoId;
+      }
+
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Create user error:', createError);
+        return NextResponse.json(
+          { error: 'Failed to create user profile' },
+          { status: 500 }
+        );
+      }
+      
+      // 생성된 UUID를 Firebase custom claims에 userId로 저장
+      const { auth } = getFirebaseAdmin();
+      await auth.setCustomUserClaims(authUser.firebaseUid, {
+        ...customClaims,
+        userId: newUser.id,
+      });
+      
+      data = newUser;
+    } else {
+      // 사용자가 있으면 업데이트
+      const updateData: any = {
+        nickname: body.nickname.trim(),
+        interests: body.interests,
+      };
+
+      if (body.profile_image_url) {
+        updateData.profile_image_url = body.profile_image_url;
+      }
+
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', authUser.userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Update user error:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update user profile' },
+          { status: 500 }
+        );
+      }
+      
+      data = updatedUser;
+    }
+
+    const error = null;
+
 
     return NextResponse.json({
       id: data.id,
       phone_number: data.phone_number,
+      kakao_id: data.kakao_id,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
       trust_score: data.trust_score,

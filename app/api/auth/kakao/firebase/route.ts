@@ -31,73 +31,49 @@ export async function POST(request: NextRequest) {
 
     const kakaoUser = await kakaoResponse.json();
     const kakaoId = kakaoUser.id.toString();
-    const email = kakaoUser.kakao_account?.email;
-    const nickname = kakaoUser.kakao_account?.profile?.nickname || `카카오${kakaoId.slice(-4)}`;
 
-    // Check if user exists by kakao_id or create new user in Supabase
-    let { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('kakao_id', kakaoId)
-      .single();
-
-    if (!user) {
-      // Create new user in Supabase (only store kakao_id, minimal info)
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert({
-          kakao_id: kakaoId,
-          phone_number: null,
-          nickname, // Only for initial display, user can change later
-          trust_score: 70,
-          trust_level: 'stable',
-          interests: [],
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
-
-      user = newUser;
-    }
-
-    // Firebase 커스텀 토큰 생성
+    // Firebase 커스텀 토큰 생성 (FaceReader 방식)
+    // Note: Supabase 사용자는 프로필 설정 완료 시 생성됨
+    console.log('🔵 [Kakao Firebase Login] Firebase Admin SDK 가져오기...');
     const { auth } = getFirebaseAdmin();
-    const firebaseUid = `kakao:${kakaoId}`;
+    console.log('✅ [Kakao Firebase Login] Firebase Admin SDK 가져오기 성공');
     
-    // Firebase 사용자가 없으면 생성
-    try {
-      await auth.getUser(firebaseUid);
-    } catch {
-      // 사용자가 없으면 생성
-      await auth.createUser({
-        uid: firebaseUid,
-        email: email || undefined,
-        displayName: nickname,
-      });
-    }
-
-    // 커스텀 토큰 생성
-    const customToken = await auth.createCustomToken(firebaseUid, {
-      userId: user.id,
+    const uid = `kakao:${kakaoId}`;
+    console.log('🔵 [Kakao Firebase Login] Firebase Custom Token 생성 시작 - UID:', uid);
+    
+    // 커스텀 토큰 생성 (Firebase가 사용자를 자동으로 생성함)
+    const customToken = await auth.createCustomToken(uid, {
+      provider: 'kakao',
       kakaoId,
     });
+    
+    console.log('✅ [Kakao Firebase Login] Firebase Custom Token 생성 성공');
 
     return NextResponse.json({
       custom_token: customToken,
     });
   } catch (error) {
-    console.error('Kakao Firebase login error:', error);
+    console.error('❌ [Kakao Firebase Login] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error details:', {
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'Error';
+    
+    console.error('❌ [Kakao Firebase Login] Error details:', {
+      name: errorName,
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: errorStack,
     });
+    
+    // Firebase Admin 관련 에러인지 확인
+    if (errorMessage.includes('FIREBASE_SERVICE_ACCOUNT_KEY') || 
+        errorMessage.includes('credential') ||
+        errorMessage.includes('permission')) {
+      return NextResponse.json(
+        { error: 'Firebase configuration error. Please check FIREBASE_SERVICE_ACCOUNT_KEY.' },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: `Failed to login with Kakao: ${errorMessage}` },
       { status: 500 }
