@@ -93,8 +93,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Kakao Firebase login error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { error: 'Failed to login with Kakao' },
+      { error: `Failed to login with Kakao: ${errorMessage}` },
       { status: 500 }
     );
   }
