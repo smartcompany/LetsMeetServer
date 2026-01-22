@@ -31,11 +31,37 @@ export async function POST(request: NextRequest) {
 
     const kakaoUser = await kakaoResponse.json();
     const kakaoId = kakaoUser.id.toString();
-
-    // 카카오 ID만 반환 (Firebase 커스텀 토큰은 프로필 설정 완료 시 생성됨)
     const uid = `kakao:${kakaoId}`;
-    console.log('✅ [Kakao Login] 카카오 ID 반환 - UID:', uid);
 
+    // Supabase에서 사용자 프로필 확인
+    const { data: existingUser, error: findError } = await supabase
+      .from('letsmeet_users')
+      .select('*')
+      .eq('user_id', uid)
+      .single();
+
+    // 프로필이 이미 있으면 Firebase 커스텀 토큰 생성
+    if (!findError && existingUser) {
+      const { auth } = getFirebaseAdmin();
+      
+      // Firebase 커스텀 토큰 생성 (사용자가 없으면 자동 생성됨)
+      const customToken = await auth.createCustomToken(uid, {
+        provider: 'kakao',
+        kakaoId,
+      });
+      
+      console.log('✅ [Kakao Login] 기존 사용자 - Firebase 커스텀 토큰 생성');
+      
+      return NextResponse.json({
+        uid: uid,
+        kakao_id: kakaoId,
+        custom_token: customToken, // 프로필이 있으면 커스텀 토큰 반환
+      });
+    }
+
+    // 프로필이 없으면 UID와 kakao_id만 반환 (프로필 설정 완료 시 커스텀 토큰 생성)
+    console.log('✅ [Kakao Login] 신규 사용자 - UID만 반환');
+    
     return NextResponse.json({
       uid: uid,
       kakao_id: kakaoId,
