@@ -50,21 +50,27 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const authUser = await verifyToken(request);
-    if (!authUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     
-    // Firebase custom claims에서 kakaoId 가져오기
-    const { auth } = getFirebaseAdmin();
-    const firebaseUser = await auth.getUser(authUser.firebaseUid);
-    const customClaims = firebaseUser.customClaims || {};
-    const kakaoId = customClaims.kakaoId;
+    // 카카오 로그인인 경우 kakao_id를 body에서 받음
+    let uid: string;
+    let kakaoId: string | undefined;
+    
+    if (body.kakao_id) {
+      // 카카오 로그인: kakao_id로 UID 생성
+      kakaoId = body.kakao_id;
+      uid = `kakao:${kakaoId}`;
+    } else {
+      // 구글/애플 로그인: Firebase 토큰 검증
+      const authUser = await verifyToken(request);
+      if (!authUser) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      uid = authUser.firebaseUid;
+    }
 
     // 필수 필드 검증
     if (!body.nickname || body.nickname.trim().length < 2) {
@@ -92,15 +98,17 @@ export async function PUT(request: NextRequest) {
     let { data: existingUser, error: findError } = await supabase
       .from('letsmeet_users')
       .select('*')
-      .eq('user_id', authUser.firebaseUid)
+      .eq('user_id', uid)
       .single();
 
     let data;
+    let isNewUser = false;
     
     if (findError || !existingUser) {
-      // 사용자가 없으면 생성 (Firebase UID를 user_id로 사용)
+      // 사용자가 없으면 생성
+      isNewUser = true;
       const userData: any = {
-        user_id: authUser.firebaseUid, // Firebase UID를 user_id로 사용
+        user_id: uid,
         nickname: body.nickname.trim(),
         interests: body.interests,
         trust_score: 70,
@@ -139,7 +147,7 @@ export async function PUT(request: NextRequest) {
       const { data: updatedUser, error: updateError } = await supabase
         .from('letsmeet_users')
         .update(updateData)
-        .eq('user_id', authUser.firebaseUid)
+        .eq('user_id', uid)
         .select()
         .single();
 
@@ -154,13 +162,43 @@ export async function PUT(request: NextRequest) {
       data = updatedUser;
     }
 
-    const error = null;
-
+    // 카카오 로그인이고 새 사용자인 경우 Firebase 커스텀 토큰 생성
+    if (kakaoId && isNewUser) {
+      const { auth } = getFirebaseAdmin();
+      
+      // Firebase 사용자가 없으면 생성
+      try {
+        await auth.getUser(uid);
+      } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+          // Firebase 사용자 생성 (커스텀 토큰 생성 시 자동 생성됨)
+        }
+      }
+      
+      // Firebase 커스텀 토큰 생성
+      const customToken = await auth.createCustomToken(uid, {
+        provider: 'kakao',
+        kakaoId,
+      });
+      
+      // 응답에 커스텀 토큰 포함
+      return NextResponse.json({
+        id: data.user_id,
+        user_id: data.user_id,
+        nickname: data.nickname,
+        profile_image_url: data.profile_image_url,
+        trust_score: data.trust_score,
+        interests: data.interests,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        is_active: data.is_active,
+        custom_token: customToken, // Firebase 커스텀 토큰 반환
+      });
+    }
 
     return NextResponse.json({
       id: data.user_id,
       user_id: data.user_id,
-      phone_number: data.phone_number,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
       trust_score: data.trust_score,

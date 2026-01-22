@@ -32,25 +32,13 @@ export async function POST(request: NextRequest) {
     const kakaoUser = await kakaoResponse.json();
     const kakaoId = kakaoUser.id.toString();
 
-    // Firebase 커스텀 토큰 생성 (FaceReader 방식)
-    // Note: Supabase 사용자는 프로필 설정 완료 시 생성됨
-    console.log('🔵 [Kakao Firebase Login] Firebase Admin SDK 가져오기...');
-    const { auth } = getFirebaseAdmin();
-    console.log('✅ [Kakao Firebase Login] Firebase Admin SDK 가져오기 성공');
-    
+    // 카카오 ID만 반환 (Firebase 커스텀 토큰은 프로필 설정 완료 시 생성됨)
     const uid = `kakao:${kakaoId}`;
-    console.log('🔵 [Kakao Firebase Login] Firebase Custom Token 생성 시작 - UID:', uid);
-    
-    // 커스텀 토큰 생성 (Firebase가 사용자를 자동으로 생성함)
-    const customToken = await auth.createCustomToken(uid, {
-      provider: 'kakao',
-      kakaoId,
-    });
-    
-    console.log('✅ [Kakao Firebase Login] Firebase Custom Token 생성 성공');
+    console.log('✅ [Kakao Login] 카카오 ID 반환 - UID:', uid);
 
     return NextResponse.json({
-      custom_token: customToken,
+      uid: uid,
+      kakao_id: kakaoId,
     });
   } catch (error) {
     console.error('❌ [Kakao Firebase Login] Error:', error);
