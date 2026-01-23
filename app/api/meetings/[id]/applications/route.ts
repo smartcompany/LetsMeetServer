@@ -85,8 +85,17 @@ export async function POST(
     }
 
     const { id } = await params;
-    const body = await request.json().catch(() => ({}));
+    let body: { answer1?: string; answer2?: string } = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      // Body가 없거나 빈 경우도 허용
+      console.log('🔵 [Server] 요청 본문이 없거나 파싱 실패 (정상일 수 있음)');
+    }
     const { answer1, answer2 } = body;
+    console.log('🔵 [Server] 요청 본문:', body);
+    console.log('🔵 [Server] answer1:', answer1);
+    console.log('🔵 [Server] answer2:', answer2);
 
     // Check if meeting exists and is open
     const { data: meeting, error: meetingError } = await supabase
@@ -152,24 +161,47 @@ export async function POST(
       );
     }
 
+    console.log('🔵 [Server] 신청 데이터 준비');
+    console.log('🔵 [Server] meeting_id:', id);
+    console.log('🔵 [Server] user_id:', user.firebaseUid);
+    console.log('🔵 [Server] answer1:', answer1);
+    console.log('🔵 [Server] answer2:', answer2);
+
+    const insertData: any = {
+      meeting_id: id,
+      user_id: user.firebaseUid,
+      status: 'pending',
+    };
+
+    // answer1과 answer2는 선택사항이므로 값이 있을 때만 추가
+    if (answer1 && typeof answer1 === 'string' && answer1.trim().length > 0) {
+      insertData.answer1 = answer1.trim();
+    }
+    if (answer2 && typeof answer2 === 'string' && answer2.trim().length > 0) {
+      insertData.answer2 = answer2.trim();
+    }
+
+    console.log('🔵 [Server] 삽입할 데이터:', insertData);
+    console.log('🔵 [Server] 삽입할 데이터 (JSON):', JSON.stringify(insertData));
+
     const { data, error } = await supabase
       .from('letsmeet_applications')
-      .insert({
-        meeting_id: id,
-        user_id: user.firebaseUid,
-        status: 'pending',
-        answer1: answer1 || null,
-        answer2: answer2 || null,
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
+      console.error('❌ [Server] 신청 삽입 에러:', error);
+      console.error('❌ [Server] 에러 코드:', error.code);
+      console.error('❌ [Server] 에러 메시지:', error.message);
+      console.error('❌ [Server] 에러 상세:', error.details);
       return NextResponse.json(
-        { error: 'Failed to apply to meeting' },
+        { error: `Failed to apply to meeting: ${error.message}` },
         { status: 500 }
       );
     }
+
+    console.log('✅ [Server] 신청 성공:', data);
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
