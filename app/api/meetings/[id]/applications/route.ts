@@ -31,20 +31,37 @@ export async function GET(
       );
     }
 
-    const { data, error } = await supabase
+    const { data: applications, error: appError } = await supabase
       .from('letsmeet_applications')
-      .select('*, letsmeet_users!user_id(id, nickname, profile_image_url, trust_score)')
+      .select('*')
       .eq('meeting_id', id)
       .order('applied_at', { ascending: false });
 
-    if (error) {
+    if (appError) {
+      console.error('Get applications error:', appError);
       return NextResponse.json(
         { error: 'Failed to get applications' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data || []);
+    // 각 신청에 대해 사용자 정보 조회
+    const applicationsWithUsers = await Promise.all(
+      (applications || []).map(async (app) => {
+        const { data: userData } = await supabase
+          .from('letsmeet_users')
+          .select('user_id, nickname, profile_image_url, trust_score')
+          .eq('user_id', app.user_id)
+          .single();
+
+        return {
+          ...app,
+          letsmeet_users: userData || null,
+        };
+      })
+    );
+
+    return NextResponse.json(applicationsWithUsers || []);
   } catch (error) {
     console.error('Get applications error:', error);
     return NextResponse.json(
