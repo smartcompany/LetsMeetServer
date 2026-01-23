@@ -85,6 +85,8 @@ export async function POST(
     }
 
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const { answer1, answer2 } = body;
 
     // Check if meeting exists and is open
     const { data: meeting, error: meetingError } = await supabase
@@ -156,6 +158,8 @@ export async function POST(
         meeting_id: id,
         user_id: user.firebaseUid,
         status: 'pending',
+        answer1: answer1 || null,
+        answer2: answer2 || null,
       })
       .select()
       .single();
