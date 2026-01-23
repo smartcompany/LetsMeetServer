@@ -19,12 +19,12 @@ export async function GET(
 
     // Check if user is the host
     const { data: meeting } = await supabase
-      .from('meetings')
+      .from('letsmeet_meetings')
       .select('host_id')
       .eq('id', id)
       .single();
 
-    if (!meeting || meeting.host_id !== user.userId) {
+    if (!meeting || meeting.host_id !== user.firebaseUid) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -32,8 +32,8 @@ export async function GET(
     }
 
     const { data, error } = await supabase
-      .from('applications')
-      .select('*, letsmeet_users(id, nickname, profile_image_url, trust_score)')
+      .from('letsmeet_applications')
+      .select('*, letsmeet_users!user_id(id, nickname, profile_image_url, trust_score)')
       .eq('meeting_id', id)
       .order('applied_at', { ascending: false });
 
@@ -71,7 +71,7 @@ export async function POST(
 
     // Check if meeting exists and is open
     const { data: meeting, error: meetingError } = await supabase
-      .from('meetings')
+      .from('letsmeet_meetings')
       .select('*')
       .eq('id', id)
       .single();
@@ -92,10 +92,10 @@ export async function POST(
 
     // Check if user is already applied
     const { data: existingApplication } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .select('id')
       .eq('meeting_id', id)
-      .eq('user_id', user.userId)
+      .eq('user_id', user.firebaseUid)
       .single();
 
     if (existingApplication) {
@@ -107,7 +107,7 @@ export async function POST(
 
     // Check current approved count
     const { count: approvedCount } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .select('*', { count: 'exact', head: true })
       .eq('meeting_id', id)
       .eq('status', 'approved');
@@ -121,9 +121,9 @@ export async function POST(
 
     // Check user trust score for application limits
     const { data: userData } = await supabase
-      .from('users')
+      .from('letsmeet_users')
       .select('trust_score')
-      .eq('id', user.userId)
+      .eq('user_id', user.firebaseUid)
       .single();
 
     if (!userData || userData.trust_score < 10) {
@@ -134,10 +134,10 @@ export async function POST(
     }
 
     const { data, error } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .insert({
         meeting_id: id,
-        user_id: user.userId,
+        user_id: user.firebaseUid,
         status: 'pending',
       })
       .select()

@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('letsmeet_meetings')
-      .select('*')
+      .select(`
+        *,
+        host:letsmeet_users!host_id(nickname)
+      `)
       .eq('status', 'open')
       .gte('meeting_date', new Date().toISOString())
       .order('meeting_date', { ascending: true });
@@ -36,7 +39,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data || []);
+    // Flatten the response to include host_nickname
+    const meetingsWithHostNickname = data?.map(meeting => ({
+      ...meeting,
+      host_nickname: meeting.host?.nickname || '',
+    }));
+
+    return NextResponse.json(meetingsWithHostNickname || []);
   } catch (error) {
     console.error('Get meetings error:', error);
     return NextResponse.json(

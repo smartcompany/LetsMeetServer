@@ -19,8 +19,8 @@ export async function PUT(
 
     // Get application and verify host
     const { data: application, error: appError } = await supabase
-      .from('applications')
-      .select('*, meetings(host_id)')
+      .from('letsmeet_applications')
+      .select('*, letsmeet_meetings!meeting_id(host_id)')
       .eq('id', id)
       .single();
 
@@ -31,8 +31,8 @@ export async function PUT(
       );
     }
 
-    const meeting = application.meetings as any;
-    if (meeting.host_id !== user.userId) {
+    const meeting = application.letsmeet_meetings as any;
+    if (meeting.host_id !== user.firebaseUid) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -41,7 +41,7 @@ export async function PUT(
 
     // Reject application
     const { data, error } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .update({
         status: 'rejected',
         reviewed_at: new Date().toISOString(),

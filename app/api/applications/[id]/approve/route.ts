@@ -19,8 +19,8 @@ export async function PUT(
 
     // Get application and verify host
     const { data: application, error: appError } = await supabase
-      .from('applications')
-      .select('*, meetings(host_id, max_participants)')
+      .from('letsmeet_applications')
+      .select('*, letsmeet_meetings!meeting_id(host_id, max_participants)')
       .eq('id', id)
       .single();
 
@@ -31,8 +31,8 @@ export async function PUT(
       );
     }
 
-    const meeting = application.meetings as any;
-    if (meeting.host_id !== user.userId) {
+    const meeting = application.letsmeet_meetings as any;
+    if (meeting.host_id !== user.firebaseUid) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -41,7 +41,7 @@ export async function PUT(
 
     // Check if meeting is full
     const { count: approvedCount } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .select('*', { count: 'exact', head: true })
       .eq('meeting_id', application.meeting_id)
       .eq('status', 'approved');
@@ -55,7 +55,7 @@ export async function PUT(
 
     // Approve application
     const { data, error } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .update({
         status: 'approved',
         reviewed_at: new Date().toISOString(),
@@ -73,14 +73,14 @@ export async function PUT(
 
     // Check if meeting is now full and close it
     const { count: newApprovedCount } = await supabase
-      .from('applications')
+      .from('letsmeet_applications')
       .select('*', { count: 'exact', head: true })
       .eq('meeting_id', application.meeting_id)
       .eq('status', 'approved');
 
     if ((newApprovedCount || 0) >= meeting.max_participants) {
       await supabase
-        .from('meetings')
+        .from('letsmeet_meetings')
         .update({ status: 'closed' })
         .eq('id', application.meeting_id);
     }
