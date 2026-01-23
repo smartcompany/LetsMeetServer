@@ -17,20 +17,33 @@ export async function GET(
 
     const { id } = await params;
 
-    const { data, error } = await supabase
-      .from('meetings')
+    const { data: meetingData, error: meetingError } = await supabase
+      .from('letsmeet_meetings')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error || !data) {
+    if (meetingError || !meetingData) {
       return NextResponse.json(
         { error: 'Meeting not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(data);
+    // Get host nickname
+    const { data: hostData } = await supabase
+      .from('letsmeet_users')
+      .select('nickname')
+      .eq('user_id', meetingData.host_id)
+      .single();
+
+    // Combine meeting data with host nickname
+    const response = {
+      ...meetingData,
+      host_nickname: hostData?.nickname || '',
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Get meeting error:', error);
     return NextResponse.json(

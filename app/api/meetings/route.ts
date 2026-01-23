@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data, error } = await supabase
+    const { data: meetingData, error: insertError } = await supabase
       .from('letsmeet_meetings')
       .insert({
         host_id: user.firebaseUid,
@@ -179,14 +179,27 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) {
+    if (insertError) {
       return NextResponse.json(
         { error: 'Failed to create meeting' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data, { status: 201 });
+    // Get host nickname
+    const { data: hostData } = await supabase
+      .from('letsmeet_users')
+      .select('nickname')
+      .eq('user_id', user.firebaseUid)
+      .single();
+
+    // Combine meeting data with host nickname
+    const response = {
+      ...meetingData,
+      host_nickname: hostData?.nickname || '',
+    };
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Create meeting error:', error);
     return NextResponse.json(
