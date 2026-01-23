@@ -79,28 +79,82 @@ export async function POST(request: NextRequest) {
       max_participants,
       interests,
       description,
+      category,
+      participation_fee,
+      gender_restriction,
+      age_range_min,
+      age_range_max,
+      approval_type,
     } = body;
 
     // Validation
-    if (!title || !meeting_date || !location || !max_participants || !interests) {
+    if (!title || !meeting_date || !location || !max_participants || !interests || !category || !approval_type) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    if (max_participants < 3 || max_participants > 6) {
+    // Title validation (max 40 characters)
+    if (title.length > 40) {
       return NextResponse.json(
-        { error: 'Max participants must be between 3 and 6' },
+        { error: 'Title must be 40 characters or less' },
         { status: 400 }
       );
     }
 
+    // Description validation (20-500 characters)
+    if (description) {
+      if (description.length < 20 || description.length > 500) {
+        return NextResponse.json(
+          { error: 'Description must be between 20 and 500 characters' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Meeting date validation (must be in the future)
+    const meetingDate = new Date(meeting_date);
+    if (meetingDate <= new Date()) {
+      return NextResponse.json(
+        { error: 'Meeting date must be in the future' },
+        { status: 400 }
+      );
+    }
+
+    // Max participants validation (2-20)
+    if (max_participants < 2 || max_participants > 20) {
+      return NextResponse.json(
+        { error: 'Max participants must be between 2 and 20' },
+        { status: 400 }
+      );
+    }
+
+    // Interests validation (max 2)
     if (interests.length > 2) {
       return NextResponse.json(
         { error: 'Maximum 2 interests allowed' },
         { status: 400 }
       );
+    }
+
+    // Participation fee validation (>= 0)
+    const fee = participation_fee ?? 0;
+    if (fee < 0) {
+      return NextResponse.json(
+        { error: 'Participation fee must be 0 or greater' },
+        { status: 400 }
+      );
+    }
+
+    // Age range validation
+    if (age_range_min !== undefined && age_range_max !== undefined) {
+      if (age_range_min > age_range_max) {
+        return NextResponse.json(
+          { error: 'Age range min must be less than or equal to max' },
+          { status: 400 }
+        );
+      }
     }
 
     const { data, error } = await supabase
@@ -114,6 +168,12 @@ export async function POST(request: NextRequest) {
         location_detail,
         max_participants,
         interests,
+        category,
+        participation_fee: fee,
+        gender_restriction: gender_restriction || 'all',
+        age_range_min: age_range_min || null,
+        age_range_max: age_range_max || null,
+        approval_type,
         status: 'open',
       })
       .select()

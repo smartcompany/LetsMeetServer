@@ -21,6 +21,12 @@ export interface Meeting {
   location_detail?: string;
   max_participants: number;
   interests: string[];
+  category?: string;
+  participation_fee?: number;
+  gender_restriction?: 'all' | 'male' | 'female';
+  age_range_min?: number;
+  age_range_max?: number;
+  approval_type?: 'immediate' | 'approval_required';
   status: 'open' | 'closed' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
