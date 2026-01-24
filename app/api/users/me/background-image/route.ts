@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const filePath = `background/${ownerId}/${Date.now()}.${ext}`;
 
     const { data, error } = await supabase.storage
-      .from('user-images')
+      .from('lets-meet')
       .upload(filePath, fileObj, {
         contentType: (fileObj as any).type || 'image/jpeg',
         upsert: true,
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: publicUrlData } = supabase.storage
-      .from('user-images')
+      .from('lets-meet')
       .getPublicUrl(filePath);
 
     return NextResponse.json({ url: publicUrlData.publicUrl });
