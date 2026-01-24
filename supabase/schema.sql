@@ -6,6 +6,10 @@ CREATE TABLE letsmeet_users (
   user_id VARCHAR(128) PRIMARY KEY, -- Firebase UID (e.g., kakao:4708212300)
   nickname VARCHAR(50) NOT NULL,
   profile_image_url TEXT,
+  full_name VARCHAR(100),
+  gender VARCHAR(10) CHECK (gender IN ('male', 'female')),
+  bio TEXT,
+  background_image_url TEXT,
   trust_score INTEGER DEFAULT 70 CHECK (trust_score >= 0 AND trust_score <= 100),
   interests TEXT[] DEFAULT '{}',
   created_at TIMESTAMP DEFAULT NOW(),

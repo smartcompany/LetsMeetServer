@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
       user_id: data.user_id,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
+      full_name: data.full_name,
+      gender: data.gender,
+      bio: data.bio,
+      background_image_url: data.background_image_url,
       trust_score: data.trust_score,
       interests: data.interests,
       created_at: data.created_at,
@@ -94,6 +98,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // gender 값 검증 (male / female 만 허용, 없으면 생략)
+    if (body.gender && body.gender !== 'male' && body.gender !== 'female') {
+      return NextResponse.json(
+        { error: 'Invalid gender value' },
+        { status: 400 }
+      );
+    }
+
     // 기존 사용자 확인
     let { data: existingUser, error: findError } = await supabase
       .from('letsmeet_users')
@@ -116,6 +128,18 @@ export async function PUT(request: NextRequest) {
 
       if (body.profile_image_url) {
         userData.profile_image_url = body.profile_image_url;
+      }
+      if (body.full_name) {
+        userData.full_name = body.full_name;
+      }
+      if (body.gender) {
+        userData.gender = body.gender;
+      }
+      if (body.bio) {
+        userData.bio = body.bio;
+      }
+      if (body.background_image_url) {
+        userData.background_image_url = body.background_image_url;
       }
 
       const { data: newUser, error: createError } = await supabase
@@ -140,8 +164,20 @@ export async function PUT(request: NextRequest) {
         interests: body.interests,
       };
 
-      if (body.profile_image_url) {
+      if (body.profile_image_url !== undefined) {
         updateData.profile_image_url = body.profile_image_url;
+      }
+      if (body.full_name !== undefined) {
+        updateData.full_name = body.full_name;
+      }
+      if (body.gender !== undefined) {
+        updateData.gender = body.gender;
+      }
+      if (body.bio !== undefined) {
+        updateData.bio = body.bio;
+      }
+      if (body.background_image_url !== undefined) {
+        updateData.background_image_url = body.background_image_url;
       }
 
       const { data: updatedUser, error: updateError } = await supabase
@@ -187,6 +223,10 @@ export async function PUT(request: NextRequest) {
         user_id: data.user_id,
         nickname: data.nickname,
         profile_image_url: data.profile_image_url,
+        full_name: data.full_name,
+        gender: data.gender,
+        bio: data.bio,
+        background_image_url: data.background_image_url,
         trust_score: data.trust_score,
         interests: data.interests,
         created_at: data.created_at,
@@ -201,6 +241,10 @@ export async function PUT(request: NextRequest) {
       user_id: data.user_id,
       nickname: data.nickname,
       profile_image_url: data.profile_image_url,
+      full_name: data.full_name,
+      gender: data.gender,
+      bio: data.bio,
+      background_image_url: data.background_image_url,
       trust_score: data.trust_score,
       interests: data.interests,
       created_at: data.created_at,
