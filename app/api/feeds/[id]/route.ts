@@ -4,7 +4,7 @@ import { supabase } from '@/lib/db/supabase';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -15,7 +15,7 @@ export async function PUT(
       );
     }
 
-    const feedId = params.id;
+    const { id: feedId } = await params;
     const body = await request.json();
     const { content, image_urls } = body;
 
@@ -87,7 +87,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -98,7 +98,7 @@ export async function DELETE(
       );
     }
 
-    const feedId = params.id;
+    const { id: feedId } = await params;
 
     // 피드 소유자 확인
     const { data: existingFeed } = await supabase
