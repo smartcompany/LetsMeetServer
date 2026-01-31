@@ -65,3 +65,86 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await verifyToken(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+
+    // Verify user is the host
+    const { data: meetingData } = await supabase
+      .from('letsmeet_meetings')
+      .select('host_id')
+      .eq('id', id)
+      .single();
+
+    if (!meetingData || meetingData.host_id !== user.firebaseUid) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    // Build update object
+    const updateData: any = {};
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.meeting_date !== undefined) updateData.meeting_date = body.meeting_date;
+    if (body.location !== undefined) updateData.location = body.location;
+    if (body.location_detail !== undefined) updateData.location_detail = body.location_detail;
+    if (body.max_participants !== undefined) updateData.max_participants = body.max_participants;
+    if (body.interests !== undefined) updateData.interests = body.interests;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.participation_fee !== undefined) updateData.participation_fee = body.participation_fee;
+    if (body.gender_restriction !== undefined) updateData.gender_restriction = body.gender_restriction;
+    if (body.age_range_min !== undefined) updateData.age_range_min = body.age_range_min;
+    if (body.age_range_max !== undefined) updateData.age_range_max = body.age_range_max;
+    if (body.approval_type !== undefined) updateData.approval_type = body.approval_type;
+    if (body.image_urls !== undefined) updateData.image_urls = body.image_urls;
+
+    const { data, error } = await supabase
+      .from('letsmeet_meetings')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Update meeting error:', error);
+      return NextResponse.json(
+        { error: 'Failed to update meeting' },
+        { status: 500 }
+      );
+    }
+
+    // Get host nickname
+    const { data: hostData } = await supabase
+      .from('letsmeet_users')
+      .select('nickname')
+      .eq('user_id', user.firebaseUid)
+      .single();
+
+    const response = {
+      ...data,
+      host_nickname: hostData?.nickname || '',
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Update meeting error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update meeting' },
+      { status: 500 }
+    );
+  }
+}
