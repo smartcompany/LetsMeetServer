@@ -12,13 +12,8 @@ jobs:
     steps:
       - name: Call Auto Complete API
         run: |
-          API_URL="${{ secrets.AUTO_COMPLETE_API_URL }}"
+          API_URL="https://lets-meet-server.vercel.app/api/meetings/auto-complete"
           API_SECRET="${{ secrets.CRON_SECRET }}"
-          
-          if [ -z "$API_URL" ]; then
-            echo "Error: AUTO_COMPLETE_API_URL secret is not set"
-            exit 1
-          fi
           
           response=$(curl -X POST "$API_URL" \
             -H "Authorization: Bearer $API_SECRET" \
