@@ -9,6 +9,7 @@ on:
 jobs:
   complete-meetings:
     runs-on: ubuntu-latest
+    environment: Production
     steps:
       - name: Call Auto Complete API
         env:
