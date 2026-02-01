@@ -11,24 +11,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call Auto Complete API
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           API_URL="https://lets-meet-server.vercel.app/api/meetings/auto-complete"
-          API_SECRET="${{ secrets.CRON_SECRET }}"
           
-          # 디버깅: 시크릿이 설정되어 있는지 확인 (값은 마스킹됨)
-          if [ -z "$API_SECRET" ]; then
+          # 디버깅: 시크릿이 설정되어 있는지 확인
+          if [ -z "$CRON_SECRET" ]; then
             echo "❌ Error: CRON_SECRET이 설정되지 않았습니다."
             echo "GitHub Secrets에 CRON_SECRET을 설정해주세요."
             exit 1
           else
-            echo "✅ CRON_SECRET이 설정되어 있습니다. (길이: ${#API_SECRET}자)"
+            echo "✅ CRON_SECRET이 설정되어 있습니다. (길이: ${#CRON_SECRET}자)"
           fi
           
           echo "🔵 API URL: $API_URL"
           echo "🔵 Authorization 헤더 설정 완료"
           
           response=$(curl -X POST "$API_URL" \
-            -H "Authorization: Bearer $API_SECRET" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
             -s)
