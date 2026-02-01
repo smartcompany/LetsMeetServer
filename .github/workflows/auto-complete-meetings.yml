@@ -1,0 +1,40 @@
+name: Auto Complete Meetings
+
+on:
+  schedule:
+    # 매일 한국 시간 자정 (UTC 15:00 = KST 00:00)
+    - cron: '0 15 * * *'
+  workflow_dispatch: # 수동 실행도 가능하도록
+
+jobs:
+  complete-meetings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Auto Complete API
+        run: |
+          API_URL="${{ secrets.AUTO_COMPLETE_API_URL }}"
+          API_SECRET="${{ secrets.CRON_SECRET }}"
+          
+          if [ -z "$API_URL" ]; then
+            echo "Error: AUTO_COMPLETE_API_URL secret is not set"
+            exit 1
+          fi
+          
+          response=$(curl -X POST "$API_URL" \
+            -H "Authorization: Bearer $API_SECRET" \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s)
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "Error: API call failed with status $http_code"
+            exit 1
+          fi
+          
+          echo "✅ Successfully completed expired meetings"
