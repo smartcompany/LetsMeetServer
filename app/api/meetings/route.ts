@@ -14,16 +14,32 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const interests = searchParams.get('interests');
+    const hostId = searchParams.get('host_id'); // 호스트 필터링 (선택사항)
+    const includeCompleted = searchParams.get('include_completed') === 'true'; // 완료된 모임 포함 (선택사항)
 
     let query = supabase
       .from('letsmeet_meetings')
       .select(`
         *,
         host:letsmeet_users!host_id(nickname)
-      `)
-      .eq('status', 'open')
-      .gte('meeting_date', new Date().toISOString())
-      .order('meeting_date', { ascending: true });
+      `);
+
+    // 호스트 필터링
+    if (hostId) {
+      query = query.eq('host_id', hostId);
+    }
+
+    // 상태 필터링: include_completed가 true가 아니면 open만, true면 모든 상태
+    if (!includeCompleted) {
+      query = query.eq('status', 'open');
+    }
+
+    // 날짜 필터링: include_completed가 true가 아니면 미래 날짜만
+    if (!includeCompleted) {
+      query = query.gte('meeting_date', new Date().toISOString());
+    }
+
+    query = query.order('meeting_date', { ascending: !includeCompleted }); // 완료된 모임 포함 시 최신순
 
     if (interests) {
       const interestList = interests.split(',');
