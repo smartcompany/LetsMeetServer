@@ -149,3 +149,56 @@ export async function PUT(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await verifyToken(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+
+    // Verify user is the host
+    const { data: meetingData } = await supabase
+      .from('letsmeet_meetings')
+      .select('host_id')
+      .eq('id', id)
+      .single();
+
+    if (!meetingData || meetingData.host_id !== user.firebaseUid) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    // Delete the meeting (완료된 모임도 삭제 가능)
+    const { error } = await supabase
+      .from('letsmeet_meetings')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Delete meeting error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete meeting' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'Meeting deleted successfully' });
+  } catch (error) {
+    console.error('Delete meeting error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete meeting' },
+      { status: 500 }
+    );
+  }
+}
