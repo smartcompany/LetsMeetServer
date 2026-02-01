@@ -111,6 +111,7 @@ export async function PUT(
     if (body.age_range_max !== undefined) updateData.age_range_max = body.age_range_max;
     if (body.approval_type !== undefined) updateData.approval_type = body.approval_type;
     if (body.image_urls !== undefined) updateData.image_urls = body.image_urls;
+    if (body.status !== undefined) updateData.status = body.status;
 
     const { data, error } = await supabase
       .from('letsmeet_meetings')
