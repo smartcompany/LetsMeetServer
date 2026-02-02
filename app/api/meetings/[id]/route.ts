@@ -25,10 +25,10 @@ export async function GET(
       );
     }
 
-    // Get host nickname
+    // Get host name
     const { data: hostData } = await supabase
       .from('letsmeet_users')
-      .select('nickname')
+      .select('full_name')
       .eq('user_id', meetingData.host_id)
       .single();
 
@@ -45,10 +45,10 @@ export async function GET(
       userApplication = applicationData || null;
     }
 
-    // Combine meeting data with host nickname and user application status
+    // Combine meeting data with host name and user application status
     const response = {
       ...meetingData,
-      host_nickname: hostData?.nickname || '',
+      host_name: hostData?.full_name || '',
       user_application: userApplication ? {
         id: userApplication.id,
         status: userApplication.status,
@@ -128,16 +128,16 @@ export async function PUT(
       );
     }
 
-    // Get host nickname
+    // Get host name
     const { data: hostData } = await supabase
       .from('letsmeet_users')
-      .select('nickname')
+      .select('full_name')
       .eq('user_id', user.firebaseUid)
       .single();
 
     const response = {
       ...data,
-      host_nickname: hostData?.nickname || '',
+      host_name: hostData?.full_name || '',
     };
 
     return NextResponse.json(response);

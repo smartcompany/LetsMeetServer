@@ -21,7 +21,7 @@ export async function GET(
       .from('letsmeet_feed_comments')
       .select(`
         *,
-        user:letsmeet_users!user_id(nickname, profile_image_url)
+        user:letsmeet_users!user_id(full_name, profile_image_url)
       `)
       .eq('feed_id', feedId)
       .order('created_at', { ascending: true });
@@ -36,7 +36,7 @@ export async function GET(
 
     const commentsWithUserInfo = data?.map(comment => ({
       ...comment,
-      user_nickname: comment.user?.nickname || '알 수 없음',
+      user_name: comment.user?.full_name || '알 수 없음',
       user_profile_image: comment.user?.profile_image_url || null,
     }));
 
@@ -83,7 +83,7 @@ export async function POST(
       })
       .select(`
         *,
-        user:letsmeet_users!user_id(nickname, profile_image_url)
+        user:letsmeet_users!user_id(full_name, profile_image_url)
       `)
       .single();
 
@@ -97,7 +97,7 @@ export async function POST(
 
     const response = {
       ...commentData,
-      user_nickname: commentData.user?.nickname || '알 수 없음',
+      user_name: commentData.user?.full_name || '알 수 없음',
       user_profile_image: commentData.user?.profile_image_url || null,
     };
 

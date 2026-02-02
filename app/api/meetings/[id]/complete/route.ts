@@ -66,16 +66,16 @@ export async function PUT(
       );
     }
 
-    // Get host nickname
+    // Get host name
     const { data: hostData } = await supabase
       .from('letsmeet_users')
-      .select('nickname')
+      .select('full_name')
       .eq('user_id', user.firebaseUid)
       .single();
 
     const response = {
       ...data,
-      host_nickname: hostData?.nickname || '',
+      host_name: hostData?.full_name || '',
     };
 
     return NextResponse.json(response);

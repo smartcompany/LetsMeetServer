@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .from('letsmeet_feeds')
       .select(`
         *,
-        author:letsmeet_users!author_id(nickname, profile_image_url)
+        author:letsmeet_users!author_id(full_name, profile_image_url)
       `)
       .order('created_at', { ascending: false });
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
         return {
           ...feed,
-          author_nickname: feed.author?.nickname || '알 수 없음',
+          author_name: feed.author?.full_name || '알 수 없음',
           author_profile_image: feed.author?.profile_image_url || null,
           is_liked: isLiked,
         };
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        author:letsmeet_users!author_id(nickname, profile_image_url)
+        author:letsmeet_users!author_id(full_name, profile_image_url)
       `)
       .single();
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const response = {
       ...feedData,
-      author_nickname: feedData.author?.nickname || '알 수 없음',
+          author_name: feedData.author?.full_name || '알 수 없음',
       author_profile_image: feedData.author?.profile_image_url || null,
     };
 

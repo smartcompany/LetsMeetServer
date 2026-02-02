@@ -31,9 +31,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       id: data.user_id, // user_id를 id로 반환 (클라이언트 호환성)
       user_id: data.user_id,
-      nickname: data.nickname,
-      profile_image_url: data.profile_image_url,
       full_name: data.full_name,
+      profile_image_url: data.profile_image_url,
       gender: data.gender,
       bio: data.bio,
       background_image_url: data.background_image_url,
@@ -77,9 +76,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // 필수 필드 검증
-    if (!body.nickname || body.nickname.trim().length < 2) {
+    if (!body.full_name || body.full_name.trim().length < 2) {
       return NextResponse.json(
-        { error: 'Nickname is required and must be at least 2 characters' },
+        { error: '이름은 2자 이상 입력해주세요.' },
         { status: 400 }
       );
     }
@@ -121,16 +120,13 @@ export async function PUT(request: NextRequest) {
       isNewUser = true;
       const userData: any = {
         user_id: uid,
-        nickname: body.nickname.trim(),
+        full_name: body.full_name.trim(),
         interests: body.interests,
         trust_score: 70,
       };
 
       if (body.profile_image_url) {
         userData.profile_image_url = body.profile_image_url;
-      }
-      if (body.full_name) {
-        userData.full_name = body.full_name;
       }
       if (body.gender) {
         userData.gender = body.gender;
@@ -160,15 +156,12 @@ export async function PUT(request: NextRequest) {
     } else {
       // 사용자가 있으면 업데이트
       const updateData: any = {
-        nickname: body.nickname.trim(),
+        full_name: body.full_name.trim(),
         interests: body.interests,
       };
 
       if (body.profile_image_url !== undefined) {
         updateData.profile_image_url = body.profile_image_url;
-      }
-      if (body.full_name !== undefined) {
-        updateData.full_name = body.full_name;
       }
       if (body.gender !== undefined) {
         updateData.gender = body.gender;
@@ -221,9 +214,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({
         id: data.user_id,
         user_id: data.user_id,
-        nickname: data.nickname,
-        profile_image_url: data.profile_image_url,
         full_name: data.full_name,
+        profile_image_url: data.profile_image_url,
         gender: data.gender,
         bio: data.bio,
         background_image_url: data.background_image_url,
@@ -239,9 +231,8 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       id: data.user_id,
       user_id: data.user_id,
-      nickname: data.nickname,
-      profile_image_url: data.profile_image_url,
       full_name: data.full_name,
+      profile_image_url: data.profile_image_url,
       gender: data.gender,
       bio: data.bio,
       background_image_url: data.background_image_url,

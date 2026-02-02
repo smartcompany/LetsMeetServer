@@ -50,7 +50,7 @@ export async function GET(
       (applications || []).map(async (app) => {
         const { data: userData } = await supabase
           .from('letsmeet_users')
-          .select('user_id, nickname, profile_image_url, trust_score')
+          .select('user_id, full_name, profile_image_url, trust_score')
           .eq('user_id', app.user_id)
           .single();
 

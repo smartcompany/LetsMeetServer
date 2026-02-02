@@ -57,7 +57,7 @@ export async function PUT(
       .eq('id', feedId)
       .select(`
         *,
-        author:letsmeet_users!author_id(nickname, profile_image_url)
+        author:letsmeet_users!author_id(full_name, profile_image_url)
       `)
       .single();
 
@@ -71,7 +71,7 @@ export async function PUT(
 
     const response = {
       ...feedData,
-      author_nickname: feedData.author?.nickname || '알 수 없음',
+      author_name: feedData.author?.full_name || '알 수 없음',
       author_profile_image: feedData.author?.profile_image_url || null,
     };
 

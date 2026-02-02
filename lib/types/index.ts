@@ -1,7 +1,7 @@
 // User types
 export interface User {
   id: string;
-  nickname: string;
+  full_name: string;
   profile_image_url?: string;
   trust_score: number;
   interests: string[];

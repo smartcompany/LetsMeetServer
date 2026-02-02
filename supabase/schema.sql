@@ -4,9 +4,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Users table (user_id = Firebase UID as primary key)
 CREATE TABLE letsmeet_users (
   user_id VARCHAR(128) PRIMARY KEY, -- Firebase UID (e.g., kakao:4708212300)
-  nickname VARCHAR(50) NOT NULL,
+  full_name VARCHAR(100) NOT NULL,
   profile_image_url TEXT,
-  full_name VARCHAR(100),
   gender VARCHAR(10) CHECK (gender IN ('male', 'female')),
   bio TEXT,
   background_image_url TEXT,

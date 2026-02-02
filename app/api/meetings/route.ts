@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       .from('letsmeet_meetings')
       .select(`
         *,
-        host:letsmeet_users!host_id(nickname)
+        host:letsmeet_users!host_id(full_name)
       `);
 
     // 호스트 필터링
@@ -55,13 +55,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Flatten the response to include host_nickname
-    const meetingsWithHostNickname = data?.map(meeting => ({
+    // Flatten the response to include host_name
+    const meetingsWithHostName = data?.map(meeting => ({
       ...meeting,
-      host_nickname: meeting.host?.nickname || '',
+      host_name: meeting.host?.full_name || '',
     }));
 
-    return NextResponse.json(meetingsWithHostNickname || []);
+    return NextResponse.json(meetingsWithHostName || []);
   } catch (error) {
     console.error('Get meetings error:', error);
     return NextResponse.json(
@@ -213,17 +213,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get host nickname
+    // Get host name
     const { data: hostData } = await supabase
       .from('letsmeet_users')
-      .select('nickname')
+      .select('full_name')
       .eq('user_id', user.firebaseUid)
       .single();
 
-    // Combine meeting data with host nickname
+    // Combine meeting data with host name
     const response = {
       ...meetingData,
-      host_nickname: hostData?.nickname || '',
+      host_name: hostData?.full_name || '',
     };
 
     return NextResponse.json(response, { status: 201 });
