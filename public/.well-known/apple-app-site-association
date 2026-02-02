@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "NTCK5U8AWD.com.smartcompany.letsMeet",
+        "paths": ["/meeting/*"]
+      }
+    ]
+  }
+}

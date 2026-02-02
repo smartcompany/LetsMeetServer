@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.smartcompany.letsMeet",
+      "sha256_cert_fingerprints": [
+        "82:E3:AA:87:F7:1E:D0:F2:EA:A2:AC:31:F3:AF:6C:7E:1A:A4:A1:C3:0F:CE:5E:1B:97:CB:14:68:F6:D2:37:63"
+      ]
+    }
+  }
+]
