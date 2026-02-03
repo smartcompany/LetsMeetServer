@@ -33,6 +33,20 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const [hostedRes, participatedRes] = await Promise.all([
+      supabase
+        .from('letsmeet_meetings')
+        .select('*', { count: 'exact', head: true })
+        .eq('host_id', id),
+      supabase
+        .from('letsmeet_applications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', id)
+        .eq('status', 'approved'),
+    ]);
+    const hostedMeetingsCount = hostedRes.count ?? 0;
+    const participatedMeetingsCount = participatedRes.count ?? 0;
+
     return NextResponse.json({
       id: data.user_id,
       user_id: data.user_id,
@@ -46,6 +60,8 @@ export async function GET(
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_active: data.is_active ?? true,
+      hosted_meetings_count: hostedMeetingsCount,
+      participated_meetings_count: participatedMeetingsCount,
     });
   } catch (error) {
     console.error('Get user profile error:', error);
