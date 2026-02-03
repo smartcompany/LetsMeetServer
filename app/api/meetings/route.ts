@@ -4,13 +4,8 @@ import { supabase } from '@/lib/db/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyToken(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // 모임 목록은 비로그인 사용자도 열람 가능 (공개 콘텐츠)
+    await verifyToken(request); // user 미사용, 인증 실패해도 진행
 
     const { searchParams } = new URL(request.url);
     const interests = searchParams.get('interests');

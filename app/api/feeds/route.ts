@@ -4,13 +4,8 @@ import { supabase } from '@/lib/db/supabase';
 
 export async function GET(request: NextRequest) {
   try {
+    // 피드 목록은 비로그인 사용자도 열람 가능 (공개 콘텐츠)
     const user = await verifyToken(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     const { data, error } = await supabase
       .from('letsmeet_feeds')
@@ -28,11 +23,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 각 피드에 대해 현재 사용자의 좋아요 여부 확인
+    // 각 피드에 대해 현재 사용자의 좋아요 여부 확인 (로그인 시에만)
     const feedsWithAuthorInfo = await Promise.all(
       (data || []).map(async (feed) => {
         let isLiked = false;
-        if (user) {
+        if (user != null) {
           const { data: likeData } = await supabase
             .from('letsmeet_feed_likes')
             .select('id')
