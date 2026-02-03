@@ -167,10 +167,14 @@ export async function POST(
     console.log('🔵 [Server] answer1:', answer1);
     console.log('🔵 [Server] answer2:', answer2);
 
+    // 즉시 참여 모임은 신청 시 자동 승인
+    const initialStatus =
+      meeting.approval_type === 'immediate' ? 'approved' : 'pending';
+
     const insertData: any = {
       meeting_id: id,
       user_id: user.firebaseUid,
-      status: 'pending',
+      status: initialStatus,
     };
 
     // answer1과 answer2는 선택사항이므로 값이 있을 때만 추가
