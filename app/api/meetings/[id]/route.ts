@@ -25,10 +25,10 @@ export async function GET(
       );
     }
 
-    // Get host name
+    // Get host info (name, profile image)
     const { data: hostData } = await supabase
       .from('letsmeet_users')
-      .select('full_name')
+      .select('full_name, profile_image_url')
       .eq('user_id', meetingData.host_id)
       .single();
 
@@ -45,10 +45,11 @@ export async function GET(
       userApplication = applicationData || null;
     }
 
-    // Combine meeting data with host name and user application status
+    // Combine meeting data with host info and user application status
     const response = {
       ...meetingData,
       host_name: hostData?.full_name || '',
+      host_profile_image_url: hostData?.profile_image_url || null,
       user_application: userApplication ? {
         id: userApplication.id,
         status: userApplication.status,
