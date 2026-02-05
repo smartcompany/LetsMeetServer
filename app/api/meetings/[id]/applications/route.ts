@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
+import { sendFcmToUser } from '@/lib/firebase/messaging';
 
 export async function GET(
   request: NextRequest,
@@ -206,6 +207,24 @@ export async function POST(
     }
 
     console.log('✅ [Server] 신청 성공:', data);
+
+    // 호스트에게 푸시 알림 전송
+    try {
+      const { data: applicant } = await supabase
+        .from('letsmeet_users')
+        .select('full_name')
+        .eq('user_id', user.firebaseUid)
+        .single();
+      const applicantName = applicant?.full_name || '누군가';
+      await sendFcmToUser(
+        meeting.host_id,
+        '새 신청이 도착했어요',
+        `${applicantName}님이 "${meeting.title}" 모임에 신청했습니다.`,
+        { type: 'application', meeting_id: id }
+      );
+    } catch (pushErr) {
+      console.warn('Push notification failed:', pushErr);
+    }
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
