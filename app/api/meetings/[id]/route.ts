@@ -45,6 +45,32 @@ export async function GET(
       userApplication = applicationData || null;
     }
 
+    // Get approved participants (호스트 + 승인된 신청자)
+    const { data: approvedApps } = await supabase
+      .from('letsmeet_applications')
+      .select('user_id')
+      .eq('meeting_id', id)
+      .eq('status', 'approved');
+
+    const participantIds = [meetingData.host_id, ...(approvedApps || []).map((a: { user_id: string }) => a.user_id).filter((uid: string) => uid !== meetingData.host_id)];
+
+    const participants = await Promise.all(
+      [...new Set(participantIds)].map(async (userId: string) => {
+        const { data: u } = await supabase
+          .from('letsmeet_users')
+          .select('user_id, full_name, profile_image_url, bio')
+          .eq('user_id', userId)
+          .single();
+        if (!u) return null;
+        return {
+          user_id: u.user_id,
+          full_name: u.full_name || '',
+          profile_image_url: u.profile_image_url || null,
+          bio: u.bio || null,
+        };
+      })
+    );
+
     // Combine meeting data with host info and user application status
     const response = {
       ...meetingData,
@@ -54,6 +80,7 @@ export async function GET(
         id: userApplication.id,
         status: userApplication.status,
       } : null,
+      participants: participants.filter(Boolean),
     };
 
     return NextResponse.json(response);
