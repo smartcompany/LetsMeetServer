@@ -10,15 +10,16 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
-    "firebase-admin": "^13.0.0",
+    "axios": "^1.7.9",
     "bcryptjs": "^3.0.3",
+    "firebase-admin": "^13.0.0",
+    "google-auth-library": "^9.9.0",
     "jsonwebtoken": "^9.0.3",
     "next": "16.1.1",
+    "openai": "^6.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "zod": "^4.3.5",
-    "axios": "^1.7.9",
-    "google-auth-library": "^9.9.0"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
