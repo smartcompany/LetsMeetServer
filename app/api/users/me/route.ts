@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest) {
 
     if (!body.life_scene_id || !body.interaction_style_id) {
       return NextResponse.json(
-        { error: '라이프 씬과 만남 스타일은 필수입니다.' },
+        { error: '좋아하는 시간과 같이 있으면은 필수입니다.' },
         { status: 400 }
       );
     }

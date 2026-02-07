@@ -1,5 +1,6 @@
 {
   "profileStyleOptions": {
+    "description": "나를 설명하면 이런 편이에요",
     "life_scenes": [
       {"id": "cafe_chat", "text": "☕ 주말 오후, 카페에서 오래 수다"},
       {"id": "walk", "text": "🌿 날 좋으면 그냥 산책"},
