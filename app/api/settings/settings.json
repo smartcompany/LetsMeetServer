@@ -1,31 +1,31 @@
 {
   "profileStyleOptions": {
     "life_scenes": [
-      {"id": "cafe_chat", "emoji": "☕", "text": "주말 오후, 카페에서 오래 수다"},
-      {"id": "walk", "emoji": "🌿", "text": "날 좋으면 그냥 산책"},
-      {"id": "exercise_home", "emoji": "🏃", "text": "운동하고 집에 바로"},
-      {"id": "travel_spontaneous", "emoji": "✈️", "text": "여행 가면 계획 없이 돌아다님"},
-      {"id": "home_relax", "emoji": "🏠", "text": "집에서 혼자 쉬는 게 최고"},
-      {"id": "going_out", "emoji": "🎉", "text": "약속 있으면 밖으로 잘 나감"},
-      {"id": "new_places", "emoji": "🧳", "text": "새로운 곳 가는 걸 좋아함"}
+      {"id": "cafe_chat", "text": "☕ 주말 오후, 카페에서 오래 수다"},
+      {"id": "walk", "text": "🌿 날 좋으면 그냥 산책"},
+      {"id": "exercise_home", "text": "🏃 운동하고 집에 바로"},
+      {"id": "travel_spontaneous", "text": "✈️ 여행 가면 계획 없이 돌아다님"},
+      {"id": "home_relax", "text": "🏠 집에서 혼자 쉬는 게 최고"},
+      {"id": "going_out", "text": "🎉 약속 있으면 밖으로 잘 나감"},
+      {"id": "new_places", "text": "🧳 새로운 곳 가는 걸 좋아함"}
     ],
     "self_statements": [
-      {"id": "chat_important", "emoji": "💬", "text": "대화 잘 통하는 게 제일 중요"},
-      {"id": "comfortable_relation", "emoji": "😌", "text": "편한 관계를 선호"},
-      {"id": "serious_open", "emoji": "🔥", "text": "진지한 인연도 열려 있음"},
-      {"id": "no_pressure", "emoji": "🕊", "text": "부담 없는 만남이 좋아요"},
-      {"id": "life_balance", "emoji": "🎯", "text": "삶의 균형을 중요하게 생각"},
-      {"id": "manners", "emoji": "🤍", "text": "사람 간 예의가 중요"},
-      {"id": "open_new", "emoji": "⚡", "text": "새로운 거에 열려 있음"}
+      {"id": "chat_important", "text": "💬 대화 잘 통하는 게 제일 중요"},
+      {"id": "comfortable_relation", "text": "😌 편한 관계를 선호"},
+      {"id": "serious_open", "text": "🔥 진지한 인연도 열려 있음"},
+      {"id": "no_pressure", "text": "🕊 부담 없는 만남이 좋아요"},
+      {"id": "life_balance", "text": "🎯 삶의 균형을 중요하게 생각"},
+      {"id": "manners", "text": "🤍 사람 간 예의가 중요"},
+      {"id": "open_new", "text": "⚡ 새로운 거에 열려 있음"}
     ],
     "interaction_styles": [
-      {"id": "speak_first", "emoji": "🙋", "text": "먼저 말 거는 편"},
-      {"id": "good_listener", "emoji": "👂", "text": "잘 들어주는 편"},
-      {"id": "planner", "emoji": "📅", "text": "계획은 내가 짜는 쪽"},
-      {"id": "spontaneous", "emoji": "⚡", "text": "즉흥 약속 OK"},
-      {"id": "slow_warmup", "emoji": "🐢", "text": "천천히 친해지는 편"},
-      {"id": "slow_reply", "emoji": "📵", "text": "연락 텀 긴 편"},
-      {"id": "good_reaction", "emoji": "😄", "text": "리액션 좋은 편"}
+      {"id": "speak_first", "text": "🙋 먼저 말 거는 편"},
+      {"id": "good_listener", "text": "👂 잘 들어주는 편"},
+      {"id": "planner", "text": "📅 계획은 내가 짜는 쪽"},
+      {"id": "spontaneous", "text": "⚡ 즉흥 약속 OK"},
+      {"id": "slow_warmup", "text": "🐢 천천히 친해지는 편"},
+      {"id": "slow_reply", "text": "📵 연락 텀 긴 편"},
+      {"id": "good_reaction", "text": "😄 리액션 좋은 편"}
     ]
   },
   "meetingCategory": {
