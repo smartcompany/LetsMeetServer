@@ -1,60 +1,51 @@
 {
+  "profileStyleOptions": {
+    "life_scenes": [
+      {"id": "cafe_chat", "emoji": "☕", "text": "주말 오후, 카페에서 오래 수다"},
+      {"id": "walk", "emoji": "🌿", "text": "날 좋으면 그냥 산책"},
+      {"id": "exercise_home", "emoji": "🏃", "text": "운동하고 집에 바로"},
+      {"id": "travel_spontaneous", "emoji": "✈️", "text": "여행 가면 계획 없이 돌아다님"},
+      {"id": "home_relax", "emoji": "🏠", "text": "집에서 혼자 쉬는 게 최고"},
+      {"id": "going_out", "emoji": "🎉", "text": "약속 있으면 밖으로 잘 나감"},
+      {"id": "new_places", "emoji": "🧳", "text": "새로운 곳 가는 걸 좋아함"}
+    ],
+    "self_statements": [
+      {"id": "chat_important", "emoji": "💬", "text": "대화 잘 통하는 게 제일 중요"},
+      {"id": "comfortable_relation", "emoji": "😌", "text": "편한 관계를 선호"},
+      {"id": "serious_open", "emoji": "🔥", "text": "진지한 인연도 열려 있음"},
+      {"id": "no_pressure", "emoji": "🕊", "text": "부담 없는 만남이 좋아요"},
+      {"id": "life_balance", "emoji": "🎯", "text": "삶의 균형을 중요하게 생각"},
+      {"id": "manners", "emoji": "🤍", "text": "사람 간 예의가 중요"},
+      {"id": "open_new", "emoji": "⚡", "text": "새로운 거에 열려 있음"}
+    ],
+    "interaction_styles": [
+      {"id": "speak_first", "emoji": "🙋", "text": "먼저 말 거는 편"},
+      {"id": "good_listener", "emoji": "👂", "text": "잘 들어주는 편"},
+      {"id": "planner", "emoji": "📅", "text": "계획은 내가 짜는 쪽"},
+      {"id": "spontaneous", "emoji": "⚡", "text": "즉흥 약속 OK"},
+      {"id": "slow_warmup", "emoji": "🐢", "text": "천천히 친해지는 편"},
+      {"id": "slow_reply", "emoji": "📵", "text": "연락 텀 긴 편"},
+      {"id": "good_reaction", "emoji": "😄", "text": "리액션 좋은 편"}
+    ]
+  },
   "meetingCategory": {
-    "sports_activity": {
-      "main": "운동/액티비티",
-      "sub": ["러닝", "헬스", "등산", "클라이밍", "요가", "축구", "배드민턴", "기타"]
-    },
-    "dance_hobby": {
-      "main": "댄스/취미 클래스",
-      "sub": ["살사", "바차타", "힙합", "K-pop댄스", "탱고", "기타"]
-    },
-    "travel_outings": {
-      "main": "여행/나들이",
-      "sub": ["국내여행", "근교 드라이브", "당일치기", "맛집투어", "기타"]
-    },
-    "food_cafe": {
-      "main": "맛집/카페",
-      "sub": ["식사모임", "브런치", "술 한잔", "디저트", "기타"]
-    },
-    "self_dev_study": {
-      "main": "자기계발/스터디",
-      "sub": ["독서", "외국어", "재테크", "코딩", "글쓰기", "기타"]
-    },
-    "culture_art": {
-      "main": "문화/예술",
-      "sub": ["전시회", "공연", "영화", "사진", "그림", "기타"]
-    },
-    "game_entertainment": {
-      "main": "게임/엔터테인먼트",
-      "sub": ["보드게임", "콘솔게임", "온라인게임", "방탈출", "기타"]
-    },
-    "social_friendship": {
-      "main": "소셜/친목",
-      "sub": ["신규친구", "수다", "동네모임", "기타"]
-    },
-    "healing_lifestyle": {
-      "main": "힐링/라이프스타일",
-      "sub": ["산책", "명상", "요가", "마인드풀니스", "기타"]
-    },
-    "etc": {
-      "main": "기타",
-      "sub": ["기타"]
-    }
+    "sports_activity": {"main": "운동/액티비티", "sub": ["러닝","헬스","등산","클라이밍","요가","축구","배드민턴","기타"]},
+    "dance_hobby": {"main": "댄스/취미 클래스", "sub": ["살사","바차타","힙합","K-pop댄스","탱고","기타"]},
+    "travel_outings": {"main": "여행/나들이", "sub": ["국내여행","근교 드라이브","당일치기","맛집투어","기타"]},
+    "food_cafe": {"main": "맛집/카페", "sub": ["식사모임","브런치","술 한잔","디저트","기타"]},
+    "self_dev_study": {"main": "자기계발/스터디", "sub": ["독서","외국어","재테크","코딩","글쓰기","기타"]},
+    "culture_art": {"main": "문화/예술", "sub": ["전시회","공연","영화","사진","그림","기타"]},
+    "game_entertainment": {"main": "게임/엔터테인먼트", "sub": ["보드게임","콘솔게임","온라인게임","방탈출","기타"]},
+    "social_friendship": {"main": "소셜/친목", "sub": ["신규친구","수다","동네모임","기타"]},
+    "healing_lifestyle": {"main": "힐링/라이프스타일", "sub": ["산책","명상","요가","마인드풀니스","기타"]},
+    "etc": {"main": "기타", "sub": ["기타"]}
   },
   "ios_ad": "initial_ad",
   "android_ad": "initial_ad",
   "ios_banner_ad": "banner_ad",
   "android_banner_ad": "banner_ad",
   "ref": {
-    "ios": {
-      "initial_ad": "ca-app-pub-5520596727761259/9323926836",
-      "rewarded_ad": "ca-app-pub-5520596727761259/5241271661",
-      "banner_ad": "ca-app-pub-5520596727761259/2440272873"
-    },
-    "android": {
-      "initial_ad": "ca-app-pub-5520596727761259/7157620423",
-      "rewarded_ad": "ca-app-pub-5520596727761259/3882705925",
-      "banner_ad": "ca-app-pub-5520596727761259/7127862465"
-    }
+    "ios": {"initial_ad": "ca-app-pub-5520596727761259/9323926836", "rewarded_ad": "ca-app-pub-5520596727761259/5241271661", "banner_ad": "ca-app-pub-5520596727761259/2440272873"},
+    "android": {"initial_ad": "ca-app-pub-5520596727761259/7157620423", "rewarded_ad": "ca-app-pub-5520596727761259/3882705925", "banner_ad": "ca-app-pub-5520596727761259/7127862465"}
   }
 }

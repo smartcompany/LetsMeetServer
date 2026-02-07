@@ -24,7 +24,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('letsmeet_users')
       .select(
-        'user_id, full_name, profile_image_url, background_image_url, gender, bio, trust_score, interests, created_at, updated_at, is_active'
+        'user_id, full_name, profile_image_url, background_image_url, gender, bio, trust_score, life_scene_id, self_statement_id, interaction_style_id, created_at, updated_at, is_active'
       )
       .eq('user_id', id)
       .single();
@@ -56,7 +56,9 @@ export async function GET(
       gender: data.gender || null,
       bio: data.bio || null,
       trust_score: data.trust_score ?? 0,
-      interests: data.interests ?? [],
+      life_scene_id: data.life_scene_id ?? null,
+      self_statement_id: data.self_statement_id ?? null,
+      interaction_style_id: data.interaction_style_id ?? null,
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_active: data.is_active ?? true,

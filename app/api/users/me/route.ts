@@ -37,7 +37,9 @@ export async function GET(request: NextRequest) {
       bio: data.bio,
       background_image_url: data.background_image_url,
       trust_score: data.trust_score,
-      interests: data.interests,
+      life_scene_id: data.life_scene_id,
+      self_statement_id: data.self_statement_id,
+      interaction_style_id: data.interaction_style_id,
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_active: data.is_active,
@@ -83,16 +85,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (!body.interests || body.interests.length === 0) {
+    if (!body.life_scene_id || !body.interaction_style_id) {
       return NextResponse.json(
-        { error: 'At least one interest is required' },
-        { status: 400 }
-      );
-    }
-
-    if (body.interests.length > 3) {
-      return NextResponse.json(
-        { error: 'Maximum 3 interests allowed' },
+        { error: '라이프 씬과 만남 스타일은 필수입니다.' },
         { status: 400 }
       );
     }
@@ -121,7 +116,9 @@ export async function PUT(request: NextRequest) {
       const userData: any = {
         user_id: uid,
         full_name: body.full_name.trim(),
-        interests: body.interests,
+        life_scene_id: body.life_scene_id,
+        self_statement_id: body.self_statement_id ?? null,
+        interaction_style_id: body.interaction_style_id,
         trust_score: 70,
       };
 
@@ -157,7 +154,9 @@ export async function PUT(request: NextRequest) {
       // 사용자가 있으면 업데이트
       const updateData: any = {
         full_name: body.full_name.trim(),
-        interests: body.interests,
+        life_scene_id: body.life_scene_id,
+        self_statement_id: body.self_statement_id ?? null,
+        interaction_style_id: body.interaction_style_id,
       };
 
       if (body.profile_image_url !== undefined) {
@@ -220,7 +219,9 @@ export async function PUT(request: NextRequest) {
         bio: data.bio,
         background_image_url: data.background_image_url,
         trust_score: data.trust_score,
-        interests: data.interests,
+        life_scene_id: data.life_scene_id,
+        self_statement_id: data.self_statement_id,
+        interaction_style_id: data.interaction_style_id,
         created_at: data.created_at,
         updated_at: data.updated_at,
         is_active: data.is_active,
@@ -237,7 +238,9 @@ export async function PUT(request: NextRequest) {
       bio: data.bio,
       background_image_url: data.background_image_url,
       trust_score: data.trust_score,
-      interests: data.interests,
+      life_scene_id: data.life_scene_id,
+      self_statement_id: data.self_statement_id,
+      interaction_style_id: data.interaction_style_id,
       created_at: data.created_at,
       updated_at: data.updated_at,
       is_active: data.is_active,

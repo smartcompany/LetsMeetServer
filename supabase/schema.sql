@@ -10,16 +10,17 @@ CREATE TABLE letsmeet_users (
   bio TEXT,
   background_image_url TEXT,
   trust_score INTEGER DEFAULT 70 CHECK (trust_score >= 0 AND trust_score <= 100),
-  interests TEXT[] DEFAULT '{}',
+  life_scene_id VARCHAR(50),
+  self_statement_id VARCHAR(50),
+  interaction_style_id VARCHAR(50),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   is_active BOOLEAN DEFAULT true
 );
 
 CREATE INDEX idx_letsmeet_users_trust_score ON letsmeet_users(trust_score);
-CREATE INDEX idx_letsmeet_users_interests ON letsmeet_users USING GIN(interests);
-
--- Meetings table
+--
+ Meetings table
 CREATE TABLE letsmeet_meetings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   host_id VARCHAR(128) NOT NULL REFERENCES letsmeet_users(user_id) ON DELETE CASCADE,
@@ -60,48 +61,6 @@ CREATE TABLE letsmeet_applications (
 CREATE INDEX idx_letsmeet_applications_meeting ON letsmeet_applications(meeting_id);
 CREATE INDEX idx_letsmeet_applications_user ON letsmeet_applications(user_id);
 CREATE INDEX idx_letsmeet_applications_status ON letsmeet_applications(status);
-
--- Attendance table
-CREATE TABLE letsmeet_attendance (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  meeting_id UUID NOT NULL REFERENCES letsmeet_meetings(id) ON DELETE CASCADE,
-  user_id VARCHAR(128) NOT NULL REFERENCES letsmeet_users(user_id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL CHECK (status IN ('attended', 'no_show', 'cancelled')),
-  cancelled_at TIMESTAMP,
-  confirmed_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(meeting_id, user_id)
-);
-
-CREATE INDEX idx_letsmeet_attendance_meeting ON letsmeet_attendance(meeting_id);
-CREATE INDEX idx_letsmeet_attendance_user ON letsmeet_attendance(user_id);
-CREATE INDEX idx_letsmeet_attendance_status ON letsmeet_attendance(status);
-
--- Chats table
-CREATE TABLE letsmeet_chats (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  meeting_id UUID NOT NULL REFERENCES letsmeet_meetings(id) ON DELETE CASCADE,
-  user_id VARCHAR(128) NOT NULL REFERENCES letsmeet_users(user_id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_letsmeet_chats_meeting ON letsmeet_chats(meeting_id);
-CREATE INDEX idx_letsmeet_chats_created ON letsmeet_chats(created_at);
-
--- User Score History table
-CREATE TABLE letsmeet_user_score_history (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id VARCHAR(128) NOT NULL REFERENCES letsmeet_users(user_id) ON DELETE CASCADE,
-  score_change INTEGER NOT NULL,
-  reason VARCHAR(100) NOT NULL CHECK (reason IN ('attendance', 'no_show', 'late_cancel', 'host_experience', 'time_recovery', 'positive_action')),
-  related_meeting_id UUID REFERENCES letsmeet_meetings(id) ON DELETE SET NULL,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_letsmeet_score_history_user ON letsmeet_user_score_history(user_id);
-CREATE INDEX idx_letsmeet_score_history_created ON letsmeet_user_score_history(created_at);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
