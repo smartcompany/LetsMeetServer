@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * CORS 미들웨어
+ * CORS 프록시
  * Flutter 웹 등 다른 오리진에서 API 호출 시 브라우저가 요청을 허용하도록 헤더 추가
  */
 const corsHeaders = {
@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // API 라우트에만 CORS 적용
   if (!request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
