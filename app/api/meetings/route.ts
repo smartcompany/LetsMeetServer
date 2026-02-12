@@ -54,11 +54,24 @@ export async function GET(request: NextRequest) {
         {};
     if (user && data && data.length > 0) {
       const meetingIds = data.map((m: { id: string }) => m.id);
-      const { data: appsData } = await supabase
+      console.log(
+        '[GET /meetings] user.firebaseUid=',
+        user.firebaseUid,
+        'meetingIds=',
+        meetingIds
+      );
+      const { data: appsData, error: appsError } = await supabase
         .from('letsmeet_applications')
         .select('id, meeting_id, status')
         .eq('user_id', user.firebaseUid)
         .in('meeting_id', meetingIds);
+
+      console.log(
+        '[GET /meetings] letsmeet_applications query: appsData=',
+        appsData,
+        'appsError=',
+        appsError
+      );
 
       if (appsData) {
         for (const app of appsData as Array<{
@@ -72,6 +85,12 @@ export async function GET(request: NextRequest) {
           };
         }
       }
+      console.log(
+        '[GET /meetings] userApplicationsMap=',
+        JSON.stringify(userApplicationsMap)
+      );
+    } else {
+      console.log('[GET /meetings] skip user_application: user=', !!user);
     }
 
     // Flatten the response to include host_name + user_application
