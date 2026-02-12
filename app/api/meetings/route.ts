@@ -5,7 +5,7 @@ import { supabase } from '@/lib/db/supabase';
 export async function GET(request: NextRequest) {
   try {
     // 모임 목록은 비로그인 사용자도 열람 가능 (공개 콘텐츠)
-    await verifyToken(request); // user 미사용, 인증 실패해도 진행
+    const user = await verifyToken(request); // user 없으면 null
 
     const { searchParams } = new URL(request.url);
     const interests = searchParams.get('interests');
@@ -50,10 +50,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Flatten the response to include host_name
+    let userApplicationsMap: Record<string, { id: string; status: string }> =
+        {};
+    if (user && data && data.length > 0) {
+      const meetingIds = data.map((m: { id: string }) => m.id);
+      const { data: appsData } = await supabase
+        .from('letsmeet_applications')
+        .select('id, meeting_id, status')
+        .eq('user_id', user.firebaseUid)
+        .in('meeting_id', meetingIds);
+
+      if (appsData) {
+        for (const app of appsData as Array<{
+          id: string;
+          meeting_id: string;
+          status: string;
+        }>) {
+          userApplicationsMap[app.meeting_id] = {
+            id: app.id,
+            status: app.status,
+          };
+        }
+      }
+    }
+
+    // Flatten the response to include host_name + user_application
     const meetingsWithHostName = data?.map(meeting => ({
       ...meeting,
       host_name: meeting.host?.full_name || '',
+      user_application: userApplicationsMap[meeting.id] ?? null,
     }));
 
     return NextResponse.json(meetingsWithHostName || []);
