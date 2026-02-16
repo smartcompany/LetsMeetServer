@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
       age_range_max,
       approval_type,
       image_urls,
+      application_questions,
     } = body;
 
     // Validation
@@ -240,6 +241,9 @@ export async function POST(request: NextRequest) {
         age_range_max: age_range_max || null,
         approval_type,
         image_urls: image_urls || [],
+        application_questions: application_questions && Array.isArray(application_questions)
+          ? application_questions.filter((q: string) => q && q.trim())
+          : [],
         status: 'open',
       })
       .select()
