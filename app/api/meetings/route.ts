@@ -10,7 +10,53 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const interests = searchParams.get('interests');
     const hostId = searchParams.get('host_id'); // 호스트 필터링 (선택사항)
+    const applicantId = searchParams.get('applicant_id'); // 신청한 모임 필터링 (선택사항)
     const includeCompleted = searchParams.get('include_completed') === 'true'; // 완료된 모임 포함 (선택사항)
+
+    // 신청한 모임 조회 (applicant_id가 자기 자신이어야 함)
+    if (applicantId) {
+      if (!user || user.firebaseUid !== applicantId) {
+        return NextResponse.json(
+          { error: 'Unauthorized to list applied meetings' },
+          { status: 401 }
+        );
+      }
+      const { data: apps } = await supabase
+        .from('letsmeet_applications')
+        .select('id, meeting_id, status')
+        .eq('user_id', applicantId);
+
+      const meetingIds = (apps || []).map((a: { meeting_id: string }) => a.meeting_id);
+      if (meetingIds.length === 0) {
+        return NextResponse.json([]);
+      }
+
+      const { data: data, error } = await supabase
+        .from('letsmeet_meetings')
+        .select(`*, host:letsmeet_users!host_id(full_name)`)
+        .in('id', meetingIds)
+        .order('meeting_date', { ascending: false });
+
+      if (error) {
+        return NextResponse.json(
+          { error: 'Failed to get meetings' },
+          { status: 500 }
+        );
+      }
+
+      const appsMap: Record<string, { id: string; status: string }> = {};
+      for (const a of (apps || []) as Array<{ id: string; meeting_id: string; status: string }>) {
+        appsMap[a.meeting_id] = { id: a.id, status: a.status };
+      }
+
+      const meetingsWithHostName = (data || []).map((meeting: { host?: { full_name?: string }; id: string }) => ({
+        ...meeting,
+        host_name: meeting.host?.full_name || '',
+        user_application: appsMap[meeting.id] ?? null,
+      }));
+
+      return NextResponse.json(meetingsWithHostName);
+    }
 
     let query = supabase
       .from('letsmeet_meetings')
