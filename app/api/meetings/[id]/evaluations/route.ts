@@ -19,6 +19,7 @@ export async function POST(
 
     const { id } = await params;
     const uid = user.firebaseUid;
+    console.log('[evaluations] POST:', { meetingId: id, evaluatorUid: uid });
 
     const { data: meetingData, error: meetingError } = await supabase
       .from('letsmeet_meetings')
@@ -27,10 +28,12 @@ export async function POST(
       .single();
 
     if (meetingError || !meetingData) {
+      console.error('[evaluations] Meeting not found:', id, meetingError);
       return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
     }
 
     if (meetingData.status !== 'completed') {
+      console.error('[evaluations] Meeting not completed:', { meetingId: id, status: meetingData.status });
       return NextResponse.json({ error: 'Meeting is not completed' }, { status: 400 });
     }
 
