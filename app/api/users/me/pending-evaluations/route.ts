@@ -35,8 +35,16 @@ export async function GET(request: NextRequest) {
     for (const m of hosted || []) {
       participantMeetingIds.add(m.id);
     }
-    for (const a of approvedApps || []) {
-      participantMeetingIds.add(a.meeting_id);
+    if (approvedApps && approvedApps.length > 0) {
+      const approvedMeetingIds = approvedApps.map((a) => a.meeting_id);
+      const { data: completedApprovedMeetings } = await supabase
+        .from('letsmeet_meetings')
+        .select('id')
+        .in('id', approvedMeetingIds)
+        .eq('status', 'completed');
+      for (const m of completedApprovedMeetings || []) {
+        participantMeetingIds.add(m.id);
+      }
     }
 
     if (participantMeetingIds.size === 0) {
