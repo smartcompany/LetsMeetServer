@@ -71,7 +71,7 @@ export async function GET(
       })
     );
 
-    // Combine meeting data with host info and user application status
+    const participantList = participants.filter(Boolean);
     const response = {
       ...meetingData,
       host_name: hostData?.full_name || '',
@@ -80,7 +80,8 @@ export async function GET(
         id: userApplication.id,
         status: userApplication.status,
       } : null,
-      participants: participants.filter(Boolean),
+      participants: participantList,
+      participant_count: participantList.length,
     };
 
     return NextResponse.json(response);

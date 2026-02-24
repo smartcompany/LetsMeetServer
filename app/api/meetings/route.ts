@@ -49,10 +49,25 @@ export async function GET(request: NextRequest) {
         appsMap[a.meeting_id] = { id: a.id, status: a.status };
       }
 
+      const meetingIdsForCount = (data || []).map((m: { id: string }) => m.id);
+      const countByMeeting: Record<string, number> = {};
+      for (const m of meetingIdsForCount) countByMeeting[m] = 1;
+      if (meetingIdsForCount.length > 0) {
+        const { data: approvedCounts } = await supabase
+          .from('letsmeet_applications')
+          .select('meeting_id')
+          .eq('status', 'approved')
+          .in('meeting_id', meetingIdsForCount);
+        for (const a of (approvedCounts || []) as Array<{ meeting_id: string }>) {
+          countByMeeting[a.meeting_id] = (countByMeeting[a.meeting_id] ?? 1) + 1;
+        }
+      }
+
       const meetingsWithHostName = (data || []).map((meeting: { host?: { full_name?: string }; id: string }) => ({
         ...meeting,
         host_name: meeting.host?.full_name || '',
         user_application: appsMap[meeting.id] ?? null,
+        participant_count: countByMeeting[meeting.id] ?? 1,
       }));
 
       return NextResponse.json(meetingsWithHostName);
@@ -139,11 +154,25 @@ export async function GET(request: NextRequest) {
       console.log('[GET /meetings] skip user_application: user=', !!user);
     }
 
-    // Flatten the response to include host_name + user_application
-    const meetingsWithHostName = data?.map(meeting => ({
+    const meetingIdsAll = data?.map((m: { id: string }) => m.id) ?? [];
+    const countByMeetingAll: Record<string, number> = {};
+    for (const m of meetingIdsAll) countByMeetingAll[m] = 1;
+    if (meetingIdsAll.length > 0) {
+      const { data: approvedCountsAll } = await supabase
+        .from('letsmeet_applications')
+        .select('meeting_id')
+        .eq('status', 'approved')
+        .in('meeting_id', meetingIdsAll);
+      for (const a of (approvedCountsAll || []) as Array<{ meeting_id: string }>) {
+        countByMeetingAll[a.meeting_id] = (countByMeetingAll[a.meeting_id] ?? 1) + 1;
+      }
+    }
+
+    const meetingsWithHostName = data?.map((meeting: { host?: { full_name?: string }; id: string }) => ({
       ...meeting,
       host_name: meeting.host?.full_name || '',
       user_application: userApplicationsMap[meeting.id] ?? null,
+      participant_count: countByMeetingAll[meeting.id] ?? 1,
     }));
 
     return NextResponse.json(meetingsWithHostName || []);
