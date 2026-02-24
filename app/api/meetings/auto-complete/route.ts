@@ -22,13 +22,15 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
-    
-    // 모임 날짜가 지났고 아직 open 또는 closed 상태인 모임 찾기
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const cutoff = new Date(now.getTime() - oneDayMs);
+
+    // 모임 날짜 + 1일이 지났고 아직 open 또는 closed 상태인 모임 찾기
     const { data: expiredMeetings, error: queryError } = await supabase
       .from('letsmeet_meetings')
       .select('id, title, meeting_date, status')
       .in('status', ['open', 'closed'])
-      .lt('meeting_date', now.toISOString());
+      .lt('meeting_date', cutoff.toISOString());
 
     if (queryError) {
       console.error('Query expired meetings error:', queryError);
