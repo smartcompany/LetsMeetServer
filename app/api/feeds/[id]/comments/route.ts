@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
+import { checkBannedWords } from '@/lib/validate-banned-words';
 
 export async function GET(
   request: NextRequest,
@@ -70,6 +71,14 @@ export async function POST(
     if (!content || content.trim().length === 0) {
       return NextResponse.json(
         { error: 'Content is required' },
+        { status: 400 }
+      );
+    }
+
+    const bannedWord = checkBannedWords(content);
+    if (bannedWord) {
+      return NextResponse.json(
+        { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
         { status: 400 }
       );
     }

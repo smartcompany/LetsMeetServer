@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
+import { checkBannedWords } from '@/lib/validate-banned-words';
 
 export async function GET(request: NextRequest) {
   try {
@@ -277,6 +278,24 @@ export async function POST(request: NextRequest) {
         { error: 'Maximum 2 interests allowed' },
         { status: 400 }
       );
+    }
+
+    // 금지어 검사 (제목, 설명, 장소, 신청 질문)
+    const textToCheck = [
+      title,
+      description,
+      location,
+      location_detail,
+      ...(Array.isArray(application_questions) ? application_questions.filter((q: string) => q && String(q).trim()) : []),
+    ].filter(Boolean).map(String);
+    for (const text of textToCheck) {
+      const bannedWord = checkBannedWords(text);
+      if (bannedWord) {
+        return NextResponse.json(
+          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
+          { status: 400 }
+        );
+      }
     }
 
     // Participation fee validation (>= 0)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
+import { checkBannedWords } from '@/lib/validate-banned-words';
 
 export async function GET(
   request: NextRequest,
@@ -146,6 +147,27 @@ export async function PUT(
         : [];
     }
     if (body.status !== undefined) updateData.status = body.status;
+
+    // 금지어 검사 (수정되는 텍스트 필드만)
+    const textToCheck: string[] = [];
+    if (body.title !== undefined) textToCheck.push(String(body.title));
+    if (body.description !== undefined) textToCheck.push(String(body.description));
+    if (body.location !== undefined) textToCheck.push(String(body.location));
+    if (body.location_detail !== undefined) textToCheck.push(String(body.location_detail));
+    if (body.application_questions !== undefined && Array.isArray(body.application_questions)) {
+      for (const q of body.application_questions) {
+        if (q && String(q).trim()) textToCheck.push(String(q).trim());
+      }
+    }
+    for (const text of textToCheck) {
+      const bannedWord = checkBannedWords(text);
+      if (bannedWord) {
+        return NextResponse.json(
+          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
+          { status: 400 }
+        );
+      }
+    }
 
     const { data, error } = await supabase
       .from('letsmeet_meetings')
