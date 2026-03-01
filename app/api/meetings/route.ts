@@ -88,10 +88,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 상태 필터링: include_completed가 true가 아니면 open만, true면 open/closed/completed/cancelled (suspended, under_review 제외)
+    // 단, 내가 만든 모임(host_id=현재유저) 목록일 때는 정지/검토 중도 포함해 호스트가 자신의 모임을 볼 수 있도록 함
     if (!includeCompleted) {
       query = query.eq('status', 'open');
     } else {
-      query = query.in('status', ['open', 'closed', 'completed', 'cancelled']);
+      const statuses = ['open', 'closed', 'completed', 'cancelled'];
+      if (user && hostId && user.firebaseUid === hostId) {
+        statuses.push('suspended', 'under_review');
+      }
+      query = query.in('status', statuses);
     }
 
     // 날짜 필터링: include_completed가 true가 아니면 미래 날짜만
