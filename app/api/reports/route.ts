@@ -7,7 +7,7 @@ import { classifyReport } from '@/lib/report-classify';
  * POST /api/reports
  * Body: { target_type, target_id, target_user_id, reason, detail?, extra? }
  * - 신고 저장 후 AI로 분류 (meeting_suspend | needs_review | no_issue)
- * - 모임인 경우 meeting_suspend -> status=suspended, needs_review -> status=under_review
+ * - 모임 정지/검토 중 설정은 신고 시점이 아니라 auto-complete(complete_meeting) 액션에서 처리
  */
 export async function POST(request: NextRequest) {
   try {
@@ -122,16 +122,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', reportRow.id);
 
-    if (targetType === 'meeting' && (aiVerdict === 'meeting_suspend' || aiVerdict === 'needs_review')) {
-      const newStatus = aiVerdict === 'meeting_suspend' ? 'suspended' : 'under_review';
-      const { error: updateMeetingError } = await supabase
-        .from('letsmeet_meetings')
-        .update({ status: newStatus })
-        .eq('id', targetId);
-      if (updateMeetingError) {
-        console.error('[reports] update meeting status error:', updateMeetingError);
-      }
-    }
+    // 정지/검토 중 설정은 신고 시점이 아니라 complete_meeting(auto-complete) 액션에서 처리
 
     return NextResponse.json(
       { id: reportRow.id, ai_verdict: aiVerdict },
