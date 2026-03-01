@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         .from('letsmeet_meetings')
         .select(`*, host:letsmeet_users!host_id(full_name)`)
         .in('id', meetingIds)
+        .in('status', ['open', 'closed', 'completed', 'cancelled'])
         .order('meeting_date', { ascending: false });
 
       if (error) {
@@ -86,9 +87,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('host_id', hostId);
     }
 
-    // 상태 필터링: include_completed가 true가 아니면 open만, true면 모든 상태
+    // 상태 필터링: include_completed가 true가 아니면 open만, true면 open/closed/completed/cancelled (suspended, under_review 제외)
     if (!includeCompleted) {
       query = query.eq('status', 'open');
+    } else {
+      query = query.in('status', ['open', 'closed', 'completed', 'cancelled']);
     }
 
     // 날짜 필터링: include_completed가 true가 아니면 미래 날짜만
