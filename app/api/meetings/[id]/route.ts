@@ -148,24 +148,40 @@ export async function PUT(
     }
     if (body.status !== undefined) updateData.status = body.status;
 
-    // 금지어 검사 (수정되는 텍스트 필드만)
-    const textToCheck: string[] = [];
-    if (body.title !== undefined) textToCheck.push(String(body.title));
-    if (body.description !== undefined) textToCheck.push(String(body.description));
-    if (body.location !== undefined) textToCheck.push(String(body.location));
-    if (body.location_detail !== undefined) textToCheck.push(String(body.location_detail));
-    if (body.application_questions !== undefined && Array.isArray(body.application_questions)) {
-      for (const q of body.application_questions) {
-        if (q && String(q).trim()) textToCheck.push(String(q).trim());
-      }
-    }
-    for (const text of textToCheck) {
+    // 금지어 검사 (수정되는 텍스트 필드만) — 필드별로 검사해 어떤 필드에서 걸렸는지 반환
+    const checkField = (text: string, fieldName: string) => {
       const bannedWord = checkBannedWords(text);
       if (bannedWord) {
         return NextResponse.json(
-          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
+          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}`, field: fieldName },
           { status: 400 }
         );
+      }
+      return null;
+    };
+    if (body.title !== undefined) {
+      const res = checkField(String(body.title), 'title');
+      if (res) return res;
+    }
+    if (body.description !== undefined) {
+      const res = checkField(String(body.description), 'description');
+      if (res) return res;
+    }
+    if (body.location !== undefined) {
+      const res = checkField(String(body.location), 'location');
+      if (res) return res;
+    }
+    if (body.location_detail !== undefined) {
+      const res = checkField(String(body.location_detail), 'location_detail');
+      if (res) return res;
+    }
+    if (body.application_questions !== undefined && Array.isArray(body.application_questions)) {
+      for (const q of body.application_questions) {
+        const t = q && String(q).trim();
+        if (t) {
+          const res = checkField(t, 'application_questions');
+          if (res) return res;
+        }
       }
     }
 

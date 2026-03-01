@@ -280,21 +280,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 금지어 검사 (제목, 설명, 장소, 신청 질문)
-    const textToCheck = [
-      title,
-      description,
-      location,
-      location_detail,
-      ...(Array.isArray(application_questions) ? application_questions.filter((q: string) => q && String(q).trim()) : []),
-    ].filter(Boolean).map(String);
-    for (const text of textToCheck) {
+    // 금지어 검사 (제목, 설명, 장소, 신청 질문) — 필드별로 검사해 어떤 필드에서 걸렸는지 반환
+    const checkField = (text: string, fieldName: string) => {
       const bannedWord = checkBannedWords(text);
       if (bannedWord) {
         return NextResponse.json(
-          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
+          { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}`, field: fieldName },
           { status: 400 }
         );
+      }
+      return null;
+    };
+    if (title) {
+      const res = checkField(String(title), 'title');
+      if (res) return res;
+    }
+    if (description) {
+      const res = checkField(String(description), 'description');
+      if (res) return res;
+    }
+    if (location) {
+      const res = checkField(String(location), 'location');
+      if (res) return res;
+    }
+    if (location_detail) {
+      const res = checkField(String(location_detail), 'location_detail');
+      if (res) return res;
+    }
+    if (Array.isArray(application_questions)) {
+      for (const q of application_questions) {
+        const t = q && String(q).trim();
+        if (t) {
+          const res = checkField(t, 'application_questions');
+          if (res) return res;
+        }
       }
     }
 

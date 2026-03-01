@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const bannedWord = checkBannedWords(content);
     if (bannedWord) {
       return NextResponse.json(
-        { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}` },
+        { error: `허용되지 않는 표현이 포함되어 있습니다: ${bannedWord}`, field: 'content' },
         { status: 400 }
       );
     }
