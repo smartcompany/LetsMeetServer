@@ -26,6 +26,18 @@ export async function GET(
       );
     }
 
+    // 정지/검토 중 모임은 호스트만 조회 가능 — 다른 사용자에게는 노출하지 않음
+    const status = meetingData.status as string;
+    if (status === 'suspended' || status === 'under_review') {
+      const currentUserId = user?.firebaseUid;
+      if (!currentUserId || currentUserId !== meetingData.host_id) {
+        return NextResponse.json(
+          { error: 'Meeting not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     // Get host info (name, profile image)
     const { data: hostData } = await supabase
       .from('letsmeet_users')
