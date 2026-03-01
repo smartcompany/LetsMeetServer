@@ -89,14 +89,24 @@ export async function POST(request: NextRequest) {
     }
 
     let aiVerdict: 'meeting_suspend' | 'needs_review' | 'no_issue' = 'needs_review';
+    let aiReason = '';
     if (process.env.OPENAI_API_KEY) {
       try {
-        aiVerdict = await classifyReport({
+        const result = await classifyReport({
           targetType,
           title,
           content,
           reportReason: reason,
           reportDetail: detail,
+        });
+        aiVerdict = result.verdict;
+        aiReason = result.reason || '';
+        console.log('[reports] AI 분류 결과', {
+          reportId: reportRow.id,
+          targetType,
+          targetId,
+          verdict: aiVerdict,
+          reason: aiReason,
         });
       } catch (e) {
         console.error('[reports] AI classify error:', e);
@@ -108,6 +118,7 @@ export async function POST(request: NextRequest) {
       .update({
         ai_verdict: aiVerdict,
         ai_verdict_at: new Date().toISOString(),
+        ai_reason: aiReason || null,
       })
       .eq('id', reportRow.id);
 
