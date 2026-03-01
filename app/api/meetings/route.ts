@@ -93,7 +93,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', 'open');
     } else {
       const statuses = ['open', 'closed', 'completed', 'cancelled'];
-      if (user && hostId && user.firebaseUid === hostId) {
+      const isMyHostedList =
+        hostId &&
+        user &&
+        (user.firebaseUid === hostId || user.userId === hostId);
+      if (isMyHostedList) {
         statuses.push('suspended', 'under_review');
       }
       query = query.in('status', statuses);
