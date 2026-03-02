@@ -39,6 +39,12 @@ function getVerdictLabel(v: string | null): string {
   return map[v] || v;
 }
 
+const MS_24H = 24 * 60 * 60 * 1000;
+function isOver24h(createdAt: string | null): boolean {
+  if (!createdAt) return false;
+  return Date.now() - new Date(createdAt).getTime() > MS_24H;
+}
+
 export default function DashboardPage() {
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +57,7 @@ export default function DashboardPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [adminSelections, setAdminSelections] = useState<Record<string, 'meeting_suspend' | 'no_issue' | ''>>({});
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [filter24h, setFilter24h] = useState<'all' | 'over24' | 'within24'>('all');
 
   const fetchTargetDetail = async (targetType: 'meeting' | 'feed', targetId: string) => {
     setDetailLoading(true);
@@ -171,6 +178,20 @@ export default function DashboardPage() {
     }
   };
 
+  const filteredReports =
+    filter24h === 'all'
+      ? reports
+      : filter24h === 'over24'
+        ? reports.filter((r) => isOver24h(r.created_at))
+        : reports.filter((r) => !isOver24h(r.created_at));
+  const sortedReports = [...filteredReports].sort((a, b) => {
+    const aOver = isOver24h(a.created_at);
+    const bOver = isOver24h(b.created_at);
+    if (aOver && !bOver) return -1;
+    if (!aOver && bOver) return 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
   if (loading && authenticated === null) {
     return (
       <div className="min-h-screen bg-zinc-100 flex items-center justify-center">
@@ -237,6 +258,18 @@ export default function DashboardPage() {
       </header>
 
       <main className="p-4 max-w-7xl mx-auto">
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <span className="text-sm text-zinc-600">24시간 기준:</span>
+          <select
+            value={filter24h}
+            onChange={(e) => setFilter24h(e.target.value as 'all' | 'over24' | 'within24')}
+            className="rounded border border-zinc-300 px-3 py-1.5 text-sm text-zinc-800 focus:border-zinc-500 focus:outline-none"
+          >
+            <option value="all">전체</option>
+            <option value="over24">24시간 경과</option>
+            <option value="within24">검토 기한 내</option>
+          </select>
+        </div>
         <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -249,18 +282,25 @@ export default function DashboardPage() {
                   <th className="px-4 py-3">신고자</th>
                   <th className="px-4 py-3">AI 처리 상태</th>
                   <th className="px-4 py-3">신고 일시</th>
+                  <th className="px-4 py-3">24시간</th>
                   <th className="px-4 py-3">신고 처리</th>
                 </tr>
               </thead>
               <tbody>
                 {reports.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-zinc-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
                       신고 내역이 없습니다.
                     </td>
                   </tr>
+                ) : sortedReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
+                      해당 조건에 맞는 신고가 없습니다.
+                    </td>
+                  </tr>
                 ) : (
-                  reports.map((r) => (
+                  sortedReports.map((r) => (
                     <tr key={r.id} className="border-b border-zinc-100 hover:bg-zinc-50/50">
                       <td className="px-4 py-3">
                         <span className={r.target_type === 'meeting' ? 'text-amber-600' : 'text-blue-600'}>
@@ -299,6 +339,17 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">
                         {r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {isOver24h(r.created_at) ? (
+                          <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800">
+                            24시간 경과
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">
+                            검토 기한 내
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <select
