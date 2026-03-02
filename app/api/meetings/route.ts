@@ -211,11 +211,23 @@ export async function POST(request: NextRequest) {
     // Check user trust score and hosting limits
     const { data: userData } = await supabase
       .from('letsmeet_users')
-      .select('trust_score')
+      .select('trust_score, is_active')
       .eq('user_id', user.firebaseUid)
       .single();
 
-    if (!userData || userData.trust_score < 30) {
+    if (!userData) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 403 }
+      );
+    }
+    if (userData.is_active === false) {
+      return NextResponse.json(
+        { error: '계정이 제한되었습니다. 문의해 주세요.' },
+        { status: 403 }
+      );
+    }
+    if (userData.trust_score < 30) {
       return NextResponse.json(
         { error: 'Insufficient trust score to create meeting' },
         { status: 403 }

@@ -151,11 +151,23 @@ export async function POST(
     // Check user trust score for application limits
     const { data: userData } = await supabase
       .from('letsmeet_users')
-      .select('trust_score')
+      .select('trust_score, is_active')
       .eq('user_id', user.firebaseUid)
       .single();
 
-    if (!userData || userData.trust_score < 10) {
+    if (!userData) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 403 }
+      );
+    }
+    if (userData.is_active === false) {
+      return NextResponse.json(
+        { error: '계정이 제한되었습니다. 문의해 주세요.' },
+        { status: 403 }
+      );
+    }
+    if (userData.trust_score < 10) {
       return NextResponse.json(
         { error: 'Insufficient trust score to apply' },
         { status: 403 }

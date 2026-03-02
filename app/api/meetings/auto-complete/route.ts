@@ -84,8 +84,33 @@ export async function POST(request: NextRequest) {
         .from('letsmeet_meetings')
         .update({ status: 'suspended' })
         .in('id', toSuspended)
-        .select('id, title');
+        .select('id, title, host_id');
       (updated || []).forEach((m) => results.push({ ...m, status: 'suspended' }));
+
+      // 호스트 감점: 정지된 모임의 호스트 trust_score -20, 10 미만이면 계정 정지(is_active=false)
+      const SUSPEND_PENALTY = 20;
+      const hostIds = [...new Set((updated || []).map((m: { host_id: string }) => m.host_id))];
+      for (const hostId of hostIds) {
+        const { data: userRow } = await supabase
+          .from('letsmeet_users')
+          .select('trust_score')
+          .eq('user_id', hostId)
+          .single();
+        if (userRow && typeof userRow.trust_score === 'number') {
+          const nextScore = Math.max(0, userRow.trust_score - SUSPEND_PENALTY);
+          const updatePayload: { trust_score: number; updated_at: string; is_active?: boolean } = {
+            trust_score: nextScore,
+            updated_at: new Date().toISOString(),
+          };
+          if (nextScore < 10) {
+            updatePayload.is_active = false;
+          }
+          await supabase
+            .from('letsmeet_users')
+            .update(updatePayload)
+            .eq('user_id', hostId);
+        }
+      }
     }
     if (toUnderReview.length > 0) {
       const { data: updated } = await supabase
