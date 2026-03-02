@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
 import { checkBannedWords } from '@/lib/validate-banned-words';
+import { getBlockedUserIds } from '@/lib/user-blocks';
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +36,13 @@ export async function GET(
       );
     }
 
-    const commentsWithUserInfo = data?.map(comment => ({
+    let comments = data || [];
+    const blockedIds = await getBlockedUserIds(user.firebaseUid);
+    if (blockedIds.length > 0) {
+      comments = comments.filter((c: { user_id: string }) => !blockedIds.includes(c.user_id));
+    }
+
+    const commentsWithUserInfo = comments.map(comment => ({
       ...comment,
       user_name: comment.user?.full_name || '알 수 없음',
       user_profile_image: comment.user?.profile_image_url || null,

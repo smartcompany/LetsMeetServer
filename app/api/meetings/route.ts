@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
 import { checkBannedWords } from '@/lib/validate-banned-words';
+import { getBlockedUserIds } from '@/lib/user-blocks';
 
 export async function GET(request: NextRequest) {
   try {
@@ -124,10 +125,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    let meetingsData = data || [];
+    if (user) {
+      const blockedIds = await getBlockedUserIds(user.firebaseUid);
+      if (blockedIds.length > 0) {
+        meetingsData = meetingsData.filter((m: { host_id: string }) => !blockedIds.includes(m.host_id));
+      }
+    }
+
     let userApplicationsMap: Record<string, { id: string; status: string }> =
         {};
-    if (user && data && data.length > 0) {
-      const meetingIds = data.map((m: { id: string }) => m.id);
+    if (user && meetingsData.length > 0) {
+      const meetingIds = meetingsData.map((m: { id: string }) => m.id);
       console.log(
         '[GET /meetings] user.firebaseUid=',
         user.firebaseUid,
@@ -167,7 +176,7 @@ export async function GET(request: NextRequest) {
       console.log('[GET /meetings] skip user_application: user=', !!user);
     }
 
-    const meetingIdsAll = data?.map((m: { id: string }) => m.id) ?? [];
+    const meetingIdsAll = meetingsData.map((m: { id: string }) => m.id);
     const countByMeetingAll: Record<string, number> = {};
     for (const m of meetingIdsAll) countByMeetingAll[m] = 1;
     if (meetingIdsAll.length > 0) {
@@ -181,7 +190,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const meetingsWithHostName = data?.map((meeting: { host?: { full_name?: string }; id: string }) => ({
+    const meetingsWithHostName = meetingsData.map((meeting: { host?: { full_name?: string }; id: string }) => ({
       ...meeting,
       host_name: meeting.host?.full_name || '',
       user_application: userApplicationsMap[meeting.id] ?? null,

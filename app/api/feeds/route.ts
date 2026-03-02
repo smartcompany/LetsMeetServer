@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/middleware/auth';
 import { supabase } from '@/lib/db/supabase';
 import { checkBannedWords } from '@/lib/validate-banned-words';
+import { getBlockedUserIds } from '@/lib/user-blocks';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,9 +25,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    let feeds = data || [];
+    if (user) {
+      const blockedIds = await getBlockedUserIds(user.firebaseUid);
+      if (blockedIds.length > 0) {
+        feeds = feeds.filter((f: { author_id: string }) => !blockedIds.includes(f.author_id));
+      }
+    }
+
     // 각 피드에 대해 현재 사용자의 좋아요 여부 확인 (로그인 시에만)
     const feedsWithAuthorInfo = await Promise.all(
-      (data || []).map(async (feed) => {
+      feeds.map(async (feed: { id: string; author?: { full_name?: string; profile_image_url?: string }; author_id?: string }) => {
         let isLiked = false;
         if (user != null) {
           const { data: likeData } = await supabase
