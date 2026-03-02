@@ -17,6 +17,7 @@ export type DashboardReportRow = {
   ai_reason: string | null;
   ai_verdict_at: string | null;
   created_at: string;
+  admin_verdict: string | null;
 };
 
 /**
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: reports, error: reportsError } = await supabase
       .from('letsmeet_reports')
-      .select('id, reporter_user_id, target_type, target_id, target_user_id, reason, detail, ai_verdict, ai_reason, ai_verdict_at, created_at')
+      .select('id, reporter_user_id, target_type, target_id, target_user_id, reason, detail, ai_verdict, ai_reason, ai_verdict_at, created_at, admin_verdict')
       .in('target_type', ['meeting', 'feed'])
       .order('created_at', { ascending: false });
 
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
 
       return {
         id: r.id,
-        target_type: r.target_type,
+        target_type: r.target_type as 'meeting' | 'feed',
         target_id: r.target_id,
         target_title_or_content,
         host_or_author_name: usersMap.get(host_or_author_id) ?? null,
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
         ai_reason: r.ai_reason,
         ai_verdict_at: r.ai_verdict_at,
         created_at: r.created_at,
+        admin_verdict: r.admin_verdict ?? null,
       };
     });
 
