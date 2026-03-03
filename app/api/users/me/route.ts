@@ -254,3 +254,41 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/users/me — 계정 삭제 (App Store Guideline 5.1.1(v))
+ * Supabase letsmeet_users 삭제. 연관 데이터는 FK ON DELETE CASCADE로 정리됨.
+ * Firebase 사용자는 클라이언트에서 signOut 처리.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const authUser = await verifyToken(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { error } = await supabase
+      .from('letsmeet_users')
+      .delete()
+      .eq('user_id', authUser.firebaseUid);
+
+    if (error) {
+      console.error('Delete user error:', error);
+      return NextResponse.json(
+        { error: '계정 삭제에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return NextResponse.json(
+      { error: '계정 삭제에 실패했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
