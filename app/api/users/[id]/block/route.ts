@@ -46,6 +46,13 @@ export async function POST(
       );
     }
 
+    // Guideline 1.2: notify developer of block (e.g. for review / 24h action)
+    console.warn('[UGC block]', {
+      blocker_user_id: user.firebaseUid,
+      blocked_user_id: blockedUserId,
+      at: new Date().toISOString(),
+    });
+
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     console.error('[block user]', e);
