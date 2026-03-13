@@ -254,11 +254,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/**
- * DELETE /api/users/me — 계정 삭제 (App Store Guideline 5.1.1(v))
- * Supabase letsmeet_users 삭제. 연관 데이터는 FK ON DELETE CASCADE로 정리됨.
- * Firebase 사용자는 클라이언트에서 signOut 처리.
- */
 export async function DELETE(request: NextRequest) {
   try {
     const authUser = await verifyToken(request);
@@ -269,10 +264,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const uid = authUser.firebaseUid;
+
     const { error } = await supabase
       .from('letsmeet_users')
       .delete()
-      .eq('user_id', authUser.firebaseUid);
+      .eq('user_id', uid);
 
     if (error) {
       console.error('Delete user error:', error);
@@ -280,6 +277,15 @@ export async function DELETE(request: NextRequest) {
         { error: '계정 삭제에 실패했습니다.' },
         { status: 500 }
       );
+    }
+
+    // Firebase Auth 계정도 서버에서 함께 삭제 (가능한 경우)
+    try {
+      const { auth } = getFirebaseAdmin();
+      await auth.deleteUser(uid);
+    } catch (firebaseError) {
+      // 이미 삭제되었거나 권한 문제 등으로 실패할 수 있으므로, 서버 계정 삭제는 성공으로 간주
+      console.error('Firebase delete user error:', firebaseError);
     }
 
     return new NextResponse(null, { status: 204 });
