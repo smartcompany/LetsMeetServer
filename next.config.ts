@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["nextjs-share-lib"],
   turbopack: {},
   webpack: (config) => {
     // Allow importing plain text files (e.g., prompts) as raw strings

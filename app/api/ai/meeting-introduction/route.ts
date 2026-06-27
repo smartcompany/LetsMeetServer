@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { verifyToken } from '@/lib/middleware/auth';
-import { openAIConfig } from '../../_helpers';
+import { ai } from '@/lib/ai-client';
 import meetingIntroductionPrompt from './meeting-introduction.txt';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 /**
  * POST /api/ai/meeting-introduction
@@ -18,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     await verifyToken(request);
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY?.trim()) {
       return NextResponse.json(
         { error: 'OPENAI_API_KEY가 설정되지 않았습니다.' },
         { status: 500 }
@@ -33,9 +28,7 @@ export async function POST(request: NextRequest) {
       content || '(사용자 입력 없음)'
     );
 
-    const response = await openai.chat.completions.create({
-      ...openAIConfig,
-      max_completion_tokens: 2000,
+    const response = await ai.createChatCompletion({
       messages: [
         {
           role: 'user',

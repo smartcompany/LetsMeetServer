@@ -1,9 +1,4 @@
-import OpenAI from 'openai';
-import { openAIConfig } from '@/app/api/_helpers';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { ai } from './ai-client';
 
 export type ReportVerdict = 'meeting_suspend' | 'needs_review' | 'no_issue';
 
@@ -59,8 +54,7 @@ needs_review
 신고 사유: ${reportReason}
 신고 상세: ${reportDetail || '(없음)'}`;
 
-  const response = await openai.chat.completions.create({
-    ...openAIConfig,
+  const response = await ai.createChatCompletion({
     messages: [{ role: 'user', content: prompt }],
   });
 

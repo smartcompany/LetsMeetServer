@@ -16,6 +16,7 @@
     "google-auth-library": "^9.9.0",
     "jsonwebtoken": "^9.0.3",
     "next": "16.1.1",
+    "nextjs-share-lib": "github:smartcompany/nextjs_share_lib#main",
     "openai": "^6.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
