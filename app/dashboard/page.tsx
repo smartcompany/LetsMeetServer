@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getFirebaseClientAuth } from '@/lib/firebase/client';
+import BotControlPanel from './components/BotControlPanel';
 
 type ReportRow = {
   id: string;
@@ -29,6 +32,8 @@ type TargetDetail = {
   image_urls: string[];
 };
 
+type DashboardTab = 'reports' | 'bot';
+
 function getVerdictLabel(v: string | null): string {
   if (!v) return '-';
   const map: Record<string, string> = {
@@ -46,11 +51,10 @@ function isOver24h(createdAt: string | null): boolean {
 }
 
 export default function DashboardPage() {
+  const [tab, setTab] = useState<DashboardTab>('reports');
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [detail, setDetail] = useState<TargetDetail | null>(null);
@@ -121,25 +125,38 @@ export default function DashboardPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setLoginError('');
     setLoginLoading(true);
+    const auth = getFirebaseClientAuth();
     try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const credential = await signInWithPopup(auth, provider);
+      const idToken = await credential.user.getIdToken();
+
       const res = await fetch(`${API}/api/dashboard/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ idToken }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      await signOut(auth).catch(() => undefined);
+
       if (!res.ok) {
         setLoginError(data.error || '로그인 실패');
         return;
       }
       setAuthenticated(true);
-      setPassword('');
       await fetchReports();
+    } catch (e) {
+      const code = e && typeof e === 'object' && 'code' in e ? String((e as { code: string }).code) : '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setLoginError('');
+        return;
+      }
+      setLoginError(e instanceof Error ? e.message : 'Google 로그인 실패');
     } finally {
       setLoginLoading(false);
     }
@@ -204,41 +221,27 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-zinc-100 flex items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-xl bg-white shadow-lg border border-zinc-200 p-8">
-          <h1 className="text-xl font-semibold text-zinc-800 mb-6 text-center">관리자 로그인</h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 mb-1">아이디</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none"
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 mb-1">비밀번호</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-zinc-500 focus:outline-none"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            {loginError && (
-              <p className="text-sm text-red-600">{loginError}</p>
-            )}
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full rounded-lg bg-zinc-800 text-white py-2 font-medium hover:bg-zinc-700 disabled:opacity-50"
-            >
-              {loginLoading ? '로그인 중...' : '로그인'}
-            </button>
-          </form>
+          <h1 className="text-xl font-semibold text-zinc-800 mb-2 text-center">관리자 로그인</h1>
+          <p className="text-sm text-zinc-500 mb-6 text-center">
+            허용된 Google 계정으로만 접속할 수 있습니다.
+          </p>
+          {loginError && (
+            <p className="text-sm text-red-600 mb-4 text-center">{loginError}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loginLoading}
+            className="w-full flex items-center justify-center gap-3 rounded-lg border border-zinc-300 bg-white py-2.5 font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.5-.4-3.5z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.3 3.7-4.5 6.4-8.3 7.5l6.2 5.2C36.4 38.3 44 33 44 24c0-1.3-.1-2.5-.4-3.5z"/>
+            </svg>
+            {loginLoading ? '로그인 중...' : 'Google로 계속하기'}
+          </button>
         </div>
       </div>
     );
@@ -247,7 +250,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-100">
       <header className="bg-white border-b border-zinc-200 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-800">신고 관리 대시보드</h1>
+        <h1 className="text-lg font-semibold text-zinc-800">운영 대시보드</h1>
         <button
           type="button"
           onClick={handleLogout}
@@ -257,7 +260,38 @@ export default function DashboardPage() {
         </button>
       </header>
 
+      <div className="bg-white border-b border-zinc-200 px-4">
+        <div className="max-w-7xl mx-auto flex gap-1">
+          <button
+            type="button"
+            onClick={() => setTab('reports')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 ${
+              tab === 'reports'
+                ? 'border-zinc-800 text-zinc-900'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            신고 관리
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('bot')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 ${
+              tab === 'bot'
+                ? 'border-zinc-800 text-zinc-900'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            AI 모임 컨트롤
+          </button>
+        </div>
+      </div>
+
       <main className="p-4 max-w-7xl mx-auto">
+        {tab === 'bot' ? (
+          <BotControlPanel />
+        ) : (
+          <>
         <div className="flex flex-wrap items-center gap-4 mb-4">
           <span className="text-sm text-zinc-600">24시간 기준:</span>
           <select
@@ -380,7 +414,6 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 상세 모달: 모임/피드 제목, 내용, 첨부 사진 */}
         {(detail !== null || detailLoading) && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
@@ -446,6 +479,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </main>
     </div>
