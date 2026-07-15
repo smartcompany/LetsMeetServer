@@ -3,6 +3,7 @@ import { getFirebaseAdmin } from "@/lib/firebase/admin";
 import { supabase } from "@/lib/db/supabase";
 import { DashboardUser } from "@/lib/bot/types";
 import { requireDashboardAuth } from "@/lib/bot/requireDashboardAuth";
+import { countBotMeetings } from "@/lib/bot/countBotMeetings";
 
 export const runtime = "nodejs";
 
@@ -60,7 +61,9 @@ export async function GET(request: NextRequest) {
       return aKey.localeCompare(bKey);
     });
 
-    return NextResponse.json({ users });
+    const botMeetingsCount = await countBotMeetings();
+
+    return NextResponse.json({ users, botMeetingsCount });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

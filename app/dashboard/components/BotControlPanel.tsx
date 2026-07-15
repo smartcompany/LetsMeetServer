@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { BotConfig, BotLog, DashboardUser } from '@/lib/bot/types';
 
 const API = process.env.NEXT_PUBLIC_API_BASE || '';
-
-type LogsResponse = { isRunning: boolean; logs: BotLog[]; botMeetingsCount: number };
+const MAX_CLIENT_LOGS = 200;
 
 const defaultConfig: BotConfig = {
   creatorRatio: 0.4,
@@ -13,6 +12,19 @@ const defaultConfig: BotConfig = {
   applyOnlyToBotMeetings: true,
   updatedAt: '',
 };
+
+function makeClientLog(level: BotLog['level'], message: string): BotLog {
+  return {
+    id: crypto.randomUUID(),
+    ts: new Date().toISOString(),
+    level,
+    message,
+  };
+}
+
+function prependLogs(prev: BotLog[], incoming: BotLog[]): BotLog[] {
+  return [...incoming, ...prev].slice(0, MAX_CLIENT_LOGS);
+}
 
 export default function BotControlPanel() {
   const [users, setUsers] = useState<DashboardUser[]>([]);
@@ -26,43 +38,38 @@ export default function BotControlPanel() {
   const [creatingUid, setCreatingUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function refreshLogsOnly() {
-    try {
-      const logsRes = await fetch(`${API}/api/dashboard/bot-logs`, {
-        cache: 'no-store',
-        credentials: 'include',
-      });
-      if (!logsRes.ok) return;
-      const logsJson = (await logsRes.json()) as LogsResponse;
-      setLogs(logsJson.logs);
-      setBotMeetingsCount(logsJson.botMeetingsCount);
-    } catch {
-      // ignore
-    }
+  function addLog(level: BotLog['level'], message: string) {
+    setLogs((prev) => prependLogs(prev, [makeClientLog(level, message)]));
+  }
+
+  function addLogsFromApi(incoming: BotLog[] | undefined) {
+    if (!incoming?.length) return;
+    setLogs((prev) => prependLogs(prev, incoming));
   }
 
   async function loadAll() {
     setLoading(true);
     setError(null);
     try {
-      const [usersRes, configRes, logsRes] = await Promise.all([
+      const [usersRes, configRes] = await Promise.all([
         fetch(`${API}/api/dashboard/bot-users`, { cache: 'no-store', credentials: 'include' }),
         fetch(`${API}/api/dashboard/bot-config`, { cache: 'no-store', credentials: 'include' }),
-        fetch(`${API}/api/dashboard/bot-logs`, { cache: 'no-store', credentials: 'include' }),
       ]);
 
       if (!usersRes.ok) throw new Error(`users API 실패: ${usersRes.status}`);
       if (!configRes.ok) throw new Error(`config API 실패: ${configRes.status}`);
-      if (!logsRes.ok) throw new Error(`logs API 실패: ${logsRes.status}`);
 
-      const usersJson = (await usersRes.json()) as { users: DashboardUser[] };
+      const usersJson = (await usersRes.json()) as {
+        users: DashboardUser[];
+        botMeetingsCount?: number;
+      };
       const configJson = (await configRes.json()) as { config: BotConfig };
-      const logsJson = (await logsRes.json()) as LogsResponse;
 
       setUsers(usersJson.users);
       setConfig(configJson.config);
-      setLogs(logsJson.logs);
-      setBotMeetingsCount(logsJson.botMeetingsCount);
+      if (typeof usersJson.botMeetingsCount === 'number') {
+        setBotMeetingsCount(usersJson.botMeetingsCount);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '알 수 없는 오류');
     } finally {
@@ -73,14 +80,6 @@ export default function BotControlPanel() {
   useEffect(() => {
     void loadAll();
   }, []);
-
-  useEffect(() => {
-    if (!simulating) return;
-    const intervalId = setInterval(() => {
-      void refreshLogsOnly();
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [simulating]);
 
   const selectedUsers = useMemo(() => users.filter((u) => u.isBot), [users]);
 
@@ -107,6 +106,7 @@ export default function BotControlPanel() {
       setUsers((prev) =>
         prev.map((u) => (u.uid === uid ? { ...u, isBot: nextIsBot } : u))
       );
+      addLog('info', `${user.email ?? uid} 봇 ${nextIsBot ? '선택' : '해제'}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : '봇 선택 저장 오류');
     } finally {
@@ -125,6 +125,7 @@ export default function BotControlPanel() {
         body: JSON.stringify(config),
       });
       if (!res.ok) throw new Error(`저장 실패: ${res.status}`);
+      addLog('info', '봇 정책 설정 저장 완료');
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : '설정 저장 오류');
@@ -142,22 +143,37 @@ export default function BotControlPanel() {
     setSimulating(true);
     setSaving(true);
     setError(null);
+    addLog('info', `시뮬레이션 시작 (봇 ${botUids.length}개)`);
     try {
-      await refreshLogsOnly();
       const res = await fetch(`${API}/api/dashboard/bot-control/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ selectedBotUids: botUids }),
       });
+      const body = (await res.json()) as {
+        error?: string;
+        logs?: BotLog[];
+        summary?: {
+          createdNow?: number;
+          appliedNow?: number;
+          approvedNow?: number;
+        };
+      };
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        addLogsFromApi(body.logs);
         throw new Error(body.error ?? `요청 실패: ${res.status}`);
+      }
+      addLogsFromApi(body.logs);
+      if (body.summary) {
+        addLog(
+          'info',
+          `시뮬레이션 완료: 생성 ${body.summary.createdNow ?? 0}, 신청 ${body.summary.appliedNow ?? 0}, 승인 ${body.summary.approvedNow ?? 0}`
+        );
       }
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : '요청 오류');
-      await refreshLogsOnly();
     } finally {
       setSimulating(false);
       setSaving(false);
@@ -175,42 +191,22 @@ export default function BotControlPanel() {
         credentials: 'include',
         body: JSON.stringify({ uid, email }),
       });
+      const body = (await res.json()) as { error?: string; log?: string; meeting?: { title: string } };
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
         throw new Error(body.error ?? `모임 생성 실패: ${res.status}`);
       }
+      addLog('info', body.log ?? `모임 생성 완료: ${body.meeting?.title ?? uid}`);
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : '모임 생성 오류');
-      await refreshLogsOnly();
     } finally {
       setCreatingUid(null);
       setSaving(false);
     }
   }
 
-  async function clearLogs() {
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API}/api/dashboard/bot-logs`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? `로그 초기화 실패: ${res.status}`);
-      }
-      const body = (await res.json()) as { logs?: BotLog[]; botMeetingsCount?: number };
-      setLogs(Array.isArray(body.logs) ? body.logs : []);
-      if (typeof body.botMeetingsCount === 'number') {
-        setBotMeetingsCount(body.botMeetingsCount);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '로그 초기화 오류');
-    } finally {
-      setSaving(false);
-    }
+  function clearLogs() {
+    setLogs([]);
   }
 
   async function deleteSelectedBotMeetings() {
@@ -233,14 +229,14 @@ export default function BotControlPanel() {
         credentials: 'include',
         body: JSON.stringify({ uids: botUids }),
       });
+      const body = (await res.json()) as { error?: string; log?: string; deletedInDb?: number };
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
         throw new Error(body.error ?? `모임 삭제 실패: ${res.status}`);
       }
+      addLog('info', body.log ?? `봇 모임 ${body.deletedInDb ?? 0}개 삭제`);
       await loadAll();
     } catch (e) {
       setError(e instanceof Error ? e.message : '모임 삭제 오류');
-      await refreshLogsOnly();
     } finally {
       setDeletingMeetings(false);
       setSaving(false);
@@ -405,15 +401,18 @@ export default function BotControlPanel() {
           <button
             type="button"
             onClick={clearLogs}
-            disabled={saving || loading}
+            disabled={logs.length === 0}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50 disabled:opacity-50"
           >
             로그 초기화
           </button>
         </div>
+        <p className="text-xs text-zinc-500 mb-2">
+          이 브라우저 세션에서 실행한 작업만 표시합니다. 서버 상세 로그는 Vercel 콘솔에서 확인하세요.
+        </p>
         <div className="max-h-80 overflow-auto font-mono text-xs text-zinc-700">
           {logs.length === 0 && <div className="text-zinc-500">로그 없음</div>}
-          {[...logs].reverse().map((log) => (
+          {logs.map((log) => (
             <div key={log.id} className="border-b border-zinc-100 py-1.5">
               [{new Date(log.ts).toLocaleString('ko-KR')}] [{log.level.toUpperCase()}]{' '}
               {log.message}

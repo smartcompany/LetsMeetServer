@@ -280,6 +280,7 @@ export async function POST(request: NextRequest) {
         hostUid: meeting.host_id,
         title: meeting.title,
       },
+      log: `모임 생성 완료: "${meeting.title}"`,
     });
   } catch (error) {
     const apiError = toBotStateApiError(error);

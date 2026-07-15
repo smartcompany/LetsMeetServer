@@ -39,6 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# bot dashboard runtime state (ephemeral on Vercel)
-/data/bot-logs.json

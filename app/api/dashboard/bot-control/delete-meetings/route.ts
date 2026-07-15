@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       deletedInDb: deletedInDb ?? 0,
       bots: targetUids.length,
-      config: null,
+      log: `봇 모임 ${deletedInDb ?? 0}개 삭제 완료`,
     });
   } catch (error) {
     const apiError = toBotStateApiError(error);

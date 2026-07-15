@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appendLog, readBotState, toBotStateApiError } from "@/lib/bot/botStore";
+import type { BotLog } from "@/lib/bot/types";
 import { requireDashboardAuth } from "@/lib/bot/requireDashboardAuth";
 import { getFirebaseAdmin } from "@/lib/firebase/admin";
 import { POST as createMeetingPost } from "../create-meeting/route";
@@ -60,11 +61,13 @@ export async function POST(request: NextRequest) {
   }
 
   const requestId = crypto.randomUUID().slice(0, 8);
-  const log = async (level: "info" | "warn" | "error", message: string) => {
-    await appendLog({
+  const runLogs: BotLog[] = [];
+  const log = (level: "info" | "warn" | "error", message: string) => {
+    const entry = appendLog({
       level,
       message: `[simulate:${requestId}] ${message}`,
     });
+    runLogs.push(entry);
   };
 
   try {
@@ -80,14 +83,17 @@ export async function POST(request: NextRequest) {
         )
       : [];
 
-    await log(
+    log(
       "info",
       `시뮬레이션 시작: manual=${isManualTrigger}, selectedBots=${bots.length}, applyN=${cfg.applicationsPerRunPerBot}`
     );
 
     if (bots.length === 0) {
-      await log("warn", "선택된 봇 계정 없음");
-      return NextResponse.json({ error: "선택된 봇 계정이 없습니다." }, { status: 400 });
+      log("warn", "선택된 봇 계정 없음");
+      return NextResponse.json(
+        { error: "선택된 봇 계정이 없습니다.", logs: runLogs },
+        { status: 400 }
+      );
     }
 
     const uidToEmail = new Map<string, string>();
@@ -98,7 +104,7 @@ export async function POST(request: NextRequest) {
         if (user.email) uidToEmail.set(user.uid, user.email);
       }
     } catch (error) {
-      await log(
+      log(
         "warn",
         `이메일 매핑 조회 실패(UID로 로그 대체): ${error instanceof Error ? error.message : "unknown"}`
       );
@@ -108,7 +114,7 @@ export async function POST(request: NextRequest) {
     const shuffled = shuffle(bots);
     const creators = shuffled;
     const appliers = shuffled;
-    await log(
+    log(
       "info",
       `역할 분리: creators=${creators.length}, appliers=${appliers.length}`
     );
@@ -139,7 +145,7 @@ export async function POST(request: NextRequest) {
 
         if (!createRes.ok || !("ok" in body) || !body.ok) {
           createFailedNow += 1;
-          await log(
+          log(
             "error",
             `${actor(uid)} 모임 생성 실패: status=${createRes.status}, reason=${"error" in body ? (body.error ?? "unknown") : "unknown"}`
           );
@@ -152,17 +158,17 @@ export async function POST(request: NextRequest) {
           hostUid: body.meeting.hostUid,
           title: body.meeting.title,
         });
-        await log("info", `${actor(uid)} 이(가) "${body.meeting.title}" 모임을 생성했습니다.`);
+        log("info", `${actor(uid)} 이(가) "${body.meeting.title}" 모임을 생성했습니다.`);
       } catch (error) {
         createFailedNow += 1;
-        await log(
+        log(
           "error",
           `${actor(uid)} 모임 생성 중 예외: ${error instanceof Error ? error.message : "unknown"}`
         );
       }
     }
 
-    await log(
+    log(
       "info",
       `모임 생성 단계 완료: created=${createdNow}, failed=${createFailedNow}`
     );
@@ -198,7 +204,7 @@ export async function POST(request: NextRequest) {
 
             if (!applyRes.ok || !("ok" in body) || !body.ok) {
               applyFailedNow += 1;
-              await log(
+              log(
                 "warn",
                 `${actor(uid)} 신청 실패: meeting="${target.title}", reason=${"error" in body ? (body.error ?? "unknown") : "unknown"}`
               );
@@ -206,10 +212,10 @@ export async function POST(request: NextRequest) {
             }
 
             appliedNow += 1;
-            await log("info", `${actor(uid)} 이(가) "${target.title}" 모임에 신청을 했습니다.`);
+            log("info", `${actor(uid)} 이(가) "${target.title}" 모임에 신청을 했습니다.`);
           } catch (error) {
             applyFailedNow += 1;
-            await log(
+            log(
               "error",
               `${actor(uid)} 신청 중 예외: ${error instanceof Error ? error.message : "unknown"}`
             );
@@ -217,9 +223,9 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      await log("info", "신청 대상 모임 없음");
+      log("info", "신청 대상 모임 없음");
     }
-    await log("info", `신청 단계 완료: applied=${appliedNow}, failed=${applyFailedNow}, selfSkipped=${skippedSelfApply}`);
+    log("info", `신청 단계 완료: applied=${appliedNow}, failed=${applyFailedNow}, selfSkipped=${skippedSelfApply}`);
 
     try {
       const approveReq = new NextRequest(new URL(request.url), {
@@ -234,7 +240,7 @@ export async function POST(request: NextRequest) {
       const approveBody = (await approveRes.json()) as ApproveApplicationsApiResponse;
 
       if (!approveRes.ok || !("ok" in approveBody) || !approveBody.ok) {
-        await log(
+        log(
           "warn",
           `승인 단계 실패: reason=${"error" in approveBody ? (approveBody.error ?? "unknown") : "unknown"}`
         );
@@ -242,22 +248,23 @@ export async function POST(request: NextRequest) {
         approvedNow = approveBody.summary.approvedNow;
         approveFailedNow = approveBody.summary.failedNow;
         approveSkippedNow = approveBody.summary.skippedNow;
-        await log(
+        log(
           "info",
           `승인 단계 완료: approved=${approvedNow}, failed=${approveFailedNow}, skipped=${approveSkippedNow}, closed=${approveBody.summary.closedNow}`
         );
       }
     } catch (error) {
-      await log("error", `승인 단계 예외: ${error instanceof Error ? error.message : "unknown"}`);
+      log("error", `승인 단계 예외: ${error instanceof Error ? error.message : "unknown"}`);
     }
 
-    await appendLog({
-      level: "info",
-      message: `[simulate:${requestId}] tick 완료: creators=${creators.length}, created=${createdNow}, applied=${appliedNow}, approved=${approvedNow}`,
-    });
+    log(
+      "info",
+      `tick 완료: creators=${creators.length}, created=${createdNow}, applied=${appliedNow}, approved=${approvedNow}`
+    );
 
     return NextResponse.json({
       ok: true,
+      logs: runLogs,
       summary: {
         selectedBots: bots.length,
         creators: creators.length,
@@ -275,11 +282,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const apiError = toBotStateApiError(error);
-    try {
-      await log("error", `simulate 예외: ${apiError.error}`);
-    } catch {
-      // ignore
-    }
-    return NextResponse.json({ error: apiError.error }, { status: apiError.status });
+    log("error", `simulate 예외: ${apiError.error}`);
+    return NextResponse.json({ error: apiError.error, logs: runLogs }, { status: apiError.status });
   }
 }
