@@ -314,10 +314,10 @@ export default function DashboardPage() {
                   <th className="px-4 py-3">모임장/작성자</th>
                   <th className="px-4 py-3">신고 내용</th>
                   <th className="px-4 py-3">신고자</th>
-                  <th className="px-4 py-3">AI 처리 상태</th>
-                  <th className="px-4 py-3">신고 일시</th>
-                  <th className="px-4 py-3">24시간</th>
-                  <th className="px-4 py-3">신고 처리</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[180px]">AI 처리 상태</th>
+                  <th className="px-4 py-3 whitespace-nowrap">신고 일시</th>
+                  <th className="px-4 py-3 whitespace-nowrap">24시간</th>
+                  <th className="px-4 py-3 whitespace-nowrap">신고 처리</th>
                 </tr>
               </thead>
               <tbody>
@@ -363,10 +363,12 @@ export default function DashboardPage() {
                       <td className="px-4 py-3">
                         {r.reporter_name ?? r.reporter_user_id}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-medium">{getVerdictLabel(r.ai_verdict)}</span>
+                      <td className="px-4 py-3 min-w-[180px] max-w-[280px]">
+                        <span className="font-medium whitespace-nowrap">
+                          {getVerdictLabel(r.ai_verdict)}
+                        </span>
                         {r.ai_reason && (
-                          <div className="text-zinc-500 text-xs mt-0.5 whitespace-pre-wrap break-words max-w-[280px]">
+                          <div className="text-zinc-500 text-xs mt-0.5 whitespace-normal break-keep">
                             {r.ai_reason}
                           </div>
                         )}
