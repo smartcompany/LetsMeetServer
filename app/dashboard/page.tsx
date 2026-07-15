@@ -44,6 +44,12 @@ function getVerdictLabel(v: string | null): string {
   return map[v] || v;
 }
 
+function previewText(text: string | null | undefined, max = 40): string {
+  const value = (text ?? '').replace(/\s+/g, ' ').trim();
+  if (!value) return '-';
+  return value.length > max ? `${value.slice(0, max)}…` : value;
+}
+
 const MS_24H = 24 * 60 * 60 * 1000;
 function isOver24h(createdAt: string | null): boolean {
   if (!createdAt) return false;
@@ -361,7 +367,7 @@ export default function DashboardPage() {
                     />
                   </th>
                   <th className="px-4 py-3 whitespace-nowrap">유형</th>
-                  <th className="px-4 py-3 whitespace-nowrap">모임/피드</th>
+                  <th className="px-4 py-3 whitespace-nowrap max-w-[200px]">모임/피드</th>
                   <th className="px-4 py-3 whitespace-nowrap">모임장/작성자</th>
                   <th className="px-4 py-3 whitespace-nowrap">신고 내용</th>
                   <th className="px-4 py-3 whitespace-nowrap">신고자</th>
@@ -408,14 +414,14 @@ export default function DashboardPage() {
                           {r.target_type === 'meeting' ? '모임' : '피드'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-[180px] max-w-[180px]">
                         <button
                           type="button"
                           onClick={() => openDetail(r)}
-                          className="text-left w-full truncate block text-zinc-800 underline decoration-zinc-300 hover:decoration-zinc-600 focus:outline-none"
-                          title="클릭하면 제목·내용·첨부 사진 보기"
+                          className="text-left block w-[180px] truncate text-zinc-800 underline decoration-zinc-300 hover:decoration-zinc-600 focus:outline-none"
+                          title={r.target_title_or_content || '클릭하면 제목·내용·첨부 사진 보기'}
                         >
-                          {r.target_title_or_content || '-'}
+                          {previewText(r.target_title_or_content, 36)}
                         </button>
                       </td>
                       <td className="px-4 py-3 truncate">
