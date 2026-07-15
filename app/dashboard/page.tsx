@@ -61,6 +61,8 @@ export default function DashboardPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [adminSelections, setAdminSelections] = useState<Record<string, 'meeting_suspend' | 'no_issue' | ''>>({});
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
   const [filter24h, setFilter24h] = useState<'all' | 'over24' | 'within24'>('all');
 
   const fetchTargetDetail = async (targetType: 'meeting' | 'feed', targetId: string) => {
@@ -106,6 +108,7 @@ export default function DashboardPage() {
     const data = await res.json();
     setReports(data.reports || []);
     setAuthenticated(true);
+    setSelectedReportIds(new Set());
     const initial: Record<string, 'meeting_suspend' | 'no_issue' | ''> = {};
     for (const r of data.reports || []) {
       const v = r.admin_verdict ?? priorSelections?.[r.id];
@@ -192,6 +195,37 @@ export default function DashboardPage() {
       await fetchReports(adminSelections);
     } finally {
       setUpdateLoading(false);
+    }
+  };
+
+  const handleDeleteReports = async (ids: string[]) => {
+    if (ids.length === 0) {
+      alert('삭제할 신고를 선택하세요.');
+      return;
+    }
+    const ok = window.confirm(
+      ids.length === 1
+        ? '이 신고 항목을 삭제할까요?'
+        : `선택한 신고 ${ids.length}건을 삭제할까요?`
+    );
+    if (!ok) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API}/api/dashboard/reports/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ report_ids: ids }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || '신고 삭제에 실패했습니다.');
+        return;
+      }
+      await fetchReports(adminSelections);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -306,42 +340,75 @@ export default function DashboardPage() {
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[1200px] text-left text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-600 font-medium">
-                  <th className="px-4 py-3">유형</th>
-                  <th className="px-4 py-3">모임/피드</th>
-                  <th className="px-4 py-3">모임장/작성자</th>
-                  <th className="px-4 py-3">신고 내용</th>
-                  <th className="px-4 py-3">신고자</th>
-                  <th className="px-4 py-3 whitespace-nowrap min-w-[180px]">AI 처리 상태</th>
+                  <th className="px-3 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={
+                        sortedReports.length > 0 &&
+                        sortedReports.every((r) => selectedReportIds.has(r.id))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedReportIds(new Set(sortedReports.map((r) => r.id)));
+                        } else {
+                          setSelectedReportIds(new Set());
+                        }
+                      }}
+                      aria-label="전체 선택"
+                    />
+                  </th>
+                  <th className="px-4 py-3 whitespace-nowrap">유형</th>
+                  <th className="px-4 py-3 whitespace-nowrap">모임/피드</th>
+                  <th className="px-4 py-3 whitespace-nowrap">모임장/작성자</th>
+                  <th className="px-4 py-3 whitespace-nowrap">신고 내용</th>
+                  <th className="px-4 py-3 whitespace-nowrap">신고자</th>
+                  <th className="px-4 py-3 whitespace-nowrap min-w-[160px]">AI 처리 상태</th>
                   <th className="px-4 py-3 whitespace-nowrap">신고 일시</th>
                   <th className="px-4 py-3 whitespace-nowrap">24시간</th>
                   <th className="px-4 py-3 whitespace-nowrap">신고 처리</th>
+                  <th className="px-4 py-3 whitespace-nowrap">삭제</th>
                 </tr>
               </thead>
               <tbody>
                 {reports.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-zinc-500">
                       신고 내역이 없습니다.
                     </td>
                   </tr>
                 ) : sortedReports.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-zinc-500">
                       해당 조건에 맞는 신고가 없습니다.
                     </td>
                   </tr>
                 ) : (
                   sortedReports.map((r) => (
                     <tr key={r.id} className="border-b border-zinc-100 hover:bg-zinc-50/50">
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedReportIds.has(r.id)}
+                          onChange={(e) => {
+                            setSelectedReportIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(r.id);
+                              else next.delete(r.id);
+                              return next;
+                            });
+                          }}
+                          aria-label="신고 선택"
+                        />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={r.target_type === 'meeting' ? 'text-amber-600' : 'text-blue-600'}>
                           {r.target_type === 'meeting' ? '모임' : '피드'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
+                      <td className="px-4 py-3">
                         <button
                           type="button"
                           onClick={() => openDetail(r)}
@@ -351,24 +418,24 @@ export default function DashboardPage() {
                           {r.target_title_or_content || '-'}
                         </button>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 truncate">
                         {r.host_or_author_name ?? r.host_or_author_id}
                       </td>
-                      <td className="px-4 py-3 max-w-[220px]">
-                        <div className="font-medium text-zinc-800">{r.reason}</div>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-zinc-800 truncate">{r.reason}</div>
                         {r.detail && (
                           <div className="text-zinc-500 truncate" title={r.detail}>{r.detail}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 truncate">
                         {r.reporter_name ?? r.reporter_user_id}
                       </td>
-                      <td className="px-4 py-3 min-w-[180px] max-w-[280px]">
+                      <td className="px-4 py-3">
                         <span className="font-medium whitespace-nowrap">
                           {getVerdictLabel(r.ai_verdict)}
                         </span>
                         {r.ai_reason && (
-                          <div className="text-zinc-500 text-xs mt-0.5 whitespace-normal break-keep">
+                          <div className="text-zinc-500 text-xs mt-0.5 line-clamp-3 break-keep">
                             {r.ai_reason}
                           </div>
                         )}
@@ -376,7 +443,7 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">
                         {r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '-'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {isOver24h(r.created_at) ? (
                           <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800">
                             24시간 경과
@@ -387,7 +454,7 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <select
                           value={adminSelections[r.id] ?? ''}
                           onChange={(e) => setAdminSelections((prev) => ({ ...prev, [r.id]: e.target.value as 'meeting_suspend' | 'no_issue' | '' }))}
@@ -398,6 +465,16 @@ export default function DashboardPage() {
                           <option value="meeting_suspend">모임 정지</option>
                         </select>
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteReports([r.id])}
+                          disabled={deleteLoading || updateLoading}
+                          className="rounded border border-red-200 bg-white px-2 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          삭제
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -405,11 +482,19 @@ export default function DashboardPage() {
             </table>
           </div>
         </div>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => void handleDeleteReports([...selectedReportIds])}
+            disabled={selectedReportIds.size === 0 || deleteLoading || updateLoading}
+            className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {deleteLoading ? '삭제 중…' : `선택 삭제${selectedReportIds.size > 0 ? ` (${selectedReportIds.size})` : ''}`}
+          </button>
           <button
             type="button"
             onClick={handleUpdateStatus}
-            disabled={reports.length === 0 || updateLoading}
+            disabled={reports.length === 0 || updateLoading || deleteLoading}
             className="rounded-lg bg-zinc-800 text-white px-4 py-2 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none"
           >
             {updateLoading ? '처리 중…' : '상태 업데이트'}

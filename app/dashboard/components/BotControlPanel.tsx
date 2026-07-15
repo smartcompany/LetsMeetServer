@@ -34,6 +34,7 @@ export default function BotControlPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [simulateProgress, setSimulateProgress] = useState<string | null>(null);
   const [deletingMeetings, setDeletingMeetings] = useState(false);
   const [creatingUid, setCreatingUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,46 +136,82 @@ export default function BotControlPanel() {
   }
 
   async function runSimulateOnce() {
-    const botUids = selectedUsers.map((u) => u.uid);
-    if (botUids.length === 0) {
+    const bots = selectedUsers;
+    if (bots.length === 0) {
       setError('1회 실행할 봇 계정을 먼저 체크하세요.');
       return;
     }
+    const peerBotUids = bots.map((u) => u.uid);
     setSimulating(true);
     setSaving(true);
     setError(null);
-    addLog('info', `시뮬레이션 시작 (봇 ${botUids.length}개)`);
+    addLog('info', `시뮬레이션 시작: 선택한 봇 ${bots.length}명을 1명씩 순차 처리`);
+
+    let totalCreated = 0;
+    let totalApplied = 0;
+    let totalApproved = 0;
+    let failedCount = 0;
+
     try {
-      const res = await fetch(`${API}/api/dashboard/bot-control/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ selectedBotUids: botUids }),
-      });
-      const body = (await res.json()) as {
-        error?: string;
-        logs?: BotLog[];
-        summary?: {
-          createdNow?: number;
-          appliedNow?: number;
-          approvedNow?: number;
-        };
-      };
-      if (!res.ok) {
-        addLogsFromApi(body.logs);
-        throw new Error(body.error ?? `요청 실패: ${res.status}`);
+      for (let i = 0; i < bots.length; i += 1) {
+        const bot = bots[i]!;
+        const label = bot.email ?? bot.profileName ?? bot.uid;
+        setSimulateProgress(`${i + 1}/${bots.length} · ${label}`);
+        addLog('info', `[${i + 1}/${bots.length}] ${label} 처리 시작`);
+
+        try {
+          const res = await fetch(`${API}/api/dashboard/bot-control/trigger`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              selectedBotUids: [bot.uid],
+              peerBotUids,
+            }),
+          });
+          const body = (await res.json()) as {
+            error?: string;
+            logs?: BotLog[];
+            summary?: {
+              createdNow?: number;
+              appliedNow?: number;
+              approvedNow?: number;
+            };
+          };
+          addLogsFromApi(body.logs);
+
+          if (!res.ok) {
+            failedCount += 1;
+            addLog('error', `[${i + 1}/${bots.length}] ${label} 실패: ${body.error ?? res.status}`);
+            continue;
+          }
+
+          totalCreated += body.summary?.createdNow ?? 0;
+          totalApplied += body.summary?.appliedNow ?? 0;
+          totalApproved += body.summary?.approvedNow ?? 0;
+          addLog(
+            'info',
+            `[${i + 1}/${bots.length}] ${label} 완료: 생성 ${body.summary?.createdNow ?? 0}, 신청 ${body.summary?.appliedNow ?? 0}, 승인 ${body.summary?.approvedNow ?? 0}`
+          );
+        } catch (e) {
+          failedCount += 1;
+          addLog(
+            'error',
+            `[${i + 1}/${bots.length}] ${label} 예외: ${e instanceof Error ? e.message : 'unknown'}`
+          );
+        }
       }
-      addLogsFromApi(body.logs);
-      if (body.summary) {
-        addLog(
-          'info',
-          `시뮬레이션 완료: 생성 ${body.summary.createdNow ?? 0}, 신청 ${body.summary.appliedNow ?? 0}, 승인 ${body.summary.approvedNow ?? 0}`
-        );
+
+      addLog(
+        'info',
+        `전체 완료: 생성 ${totalCreated}, 신청 ${totalApplied}, 승인 ${totalApproved}, 실패 ${failedCount}`
+      );
+      if (failedCount > 0) {
+        setError(`${failedCount}명 처리 중 오류가 있었습니다. 실행 로그를 확인하세요.`);
       }
       await loadAll();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '요청 오류');
     } finally {
+      setSimulateProgress(null);
       setSimulating(false);
       setSaving(false);
     }
@@ -264,7 +301,11 @@ export default function BotControlPanel() {
             disabled={saving || loading || simulating}
             className="rounded-lg bg-blue-600 text-white px-3 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
           >
-            {simulating ? '실행 중...' : '지금 1회 실행 (simulate)'}
+            {simulating
+              ? simulateProgress
+                ? `실행 중... ${simulateProgress}`
+                : '실행 중...'
+              : '지금 1회 실행 (simulate)'}
           </button>
           <button
             type="button"

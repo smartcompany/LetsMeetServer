@@ -5,16 +5,22 @@ import { POST as simulatePost } from "../simulate/route";
 
 export const runtime = "nodejs";
 
-/** 대시보드에서 "1회 시뮬레이션" 요청 시 simulate tick 1회 실행 */
+/** 대시보드에서 봇 1명(또는 소수)에 대한 시뮬레이션 1회 실행 */
 export async function POST(request: NextRequest) {
   const denied = requireDashboardAuth(request);
   if (denied) return denied;
 
   const body = (await request.json().catch(() => ({}))) as {
     selectedBotUids?: unknown;
+    peerBotUids?: unknown;
   };
   const selectedBotUids = Array.isArray(body.selectedBotUids)
     ? body.selectedBotUids.filter(
+        (v): v is string => typeof v === "string" && v.length > 0
+      )
+    : [];
+  const peerBotUids = Array.isArray(body.peerBotUids)
+    ? body.peerBotUids.filter(
         (v): v is string => typeof v === "string" && v.length > 0
       )
     : [];
@@ -26,12 +32,12 @@ export async function POST(request: NextRequest) {
       "x-simulate-trigger": "runNow",
       "x-dashboard-internal": "1",
     },
-    body: JSON.stringify({ selectedBotUids }),
+    body: JSON.stringify({ selectedBotUids, peerBotUids }),
   });
 
-  await appendLog({
+  appendLog({
     level: "info",
-    message: `1회 시뮬레이션 즉시 실행 (선택 봇 ${selectedBotUids.length}개)`,
+    message: `시뮬레이션 실행: bots=${selectedBotUids.length}, peers=${peerBotUids.length || selectedBotUids.length}`,
   });
 
   const res = await simulatePost(internalReq);

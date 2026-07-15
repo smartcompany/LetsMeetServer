@@ -3,6 +3,7 @@ import { appendLog, readBotState, toBotStateApiError } from "@/lib/bot/botStore"
 import type { BotLog } from "@/lib/bot/types";
 import { requireDashboardAuth } from "@/lib/bot/requireDashboardAuth";
 import { getFirebaseAdmin } from "@/lib/firebase/admin";
+import { supabase } from "@/lib/db/supabase";
 import { POST as createMeetingPost } from "../create-meeting/route";
 import { POST as createApplicationPost } from "../create-application/route";
 import { POST as approveApplicationsPost } from "../approve-applications/route";
@@ -16,6 +17,10 @@ function shuffle<T>(list: T[]) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+function uniqueStrings(list: string[]) {
+  return [...new Set(list.filter((v) => v.length > 0))];
 }
 
 type CreateMeetingApiResponse =
@@ -53,6 +58,23 @@ type ApproveApplicationsApiResponse =
     }
   | { error?: string };
 
+type MeetingCandidate = { id: string; hostUid: string; title: string };
+
+async function loadPeerBotMeetings(peerUids: string[]): Promise<MeetingCandidate[]> {
+  if (peerUids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("letsmeet_meetings")
+    .select("id, host_id, title")
+    .in("host_id", peerUids)
+    .eq("status", "open");
+  if (error || !data) return [];
+  return data.map((row) => ({
+    id: row.id as string,
+    hostUid: row.host_id as string,
+    title: (row.title as string) || "",
+  }));
+}
+
 export async function POST(request: NextRequest) {
   const isInternal = request.headers.get("x-dashboard-internal") === "1";
   if (!isInternal) {
@@ -76,16 +98,27 @@ export async function POST(request: NextRequest) {
 
     const bodyJson = (await request.json().catch(() => ({}))) as {
       selectedBotUids?: unknown;
+      peerBotUids?: unknown;
     };
     const bots = Array.isArray(bodyJson.selectedBotUids)
-      ? bodyJson.selectedBotUids.filter(
-          (v): v is string => typeof v === "string" && v.length > 0
+      ? uniqueStrings(
+          bodyJson.selectedBotUids.filter(
+            (v): v is string => typeof v === "string" && v.length > 0
+          )
         )
       : [];
+    const peerBots = Array.isArray(bodyJson.peerBotUids)
+      ? uniqueStrings(
+          bodyJson.peerBotUids.filter(
+            (v): v is string => typeof v === "string" && v.length > 0
+          )
+        )
+      : [];
+    const approveScope = peerBots.length > 0 ? uniqueStrings([...peerBots, ...bots]) : bots;
 
     log(
       "info",
-      `시뮬레이션 시작: manual=${isManualTrigger}, selectedBots=${bots.length}, applyN=${cfg.applicationsPerRunPerBot}`
+      `시뮬레이션 시작: manual=${isManualTrigger}, selectedBots=${bots.length}, peers=${approveScope.length}, applyN=${cfg.applicationsPerRunPerBot}`
     );
 
     if (bots.length === 0) {
@@ -99,7 +132,8 @@ export async function POST(request: NextRequest) {
     const uidToEmail = new Map<string, string>();
     try {
       const { auth } = getFirebaseAdmin();
-      const result = await auth.getUsers(bots.map((uid) => ({ uid })));
+      const lookupUids = uniqueStrings([...bots, ...approveScope]);
+      const result = await auth.getUsers(lookupUids.map((uid) => ({ uid })));
       for (const user of result.users) {
         if (user.email) uidToEmail.set(user.uid, user.email);
       }
@@ -111,13 +145,9 @@ export async function POST(request: NextRequest) {
     }
     const actor = (uid: string) => uidToEmail.get(uid) ?? uid;
 
-    const shuffled = shuffle(bots);
-    const creators = shuffled;
-    const appliers = shuffled;
-    log(
-      "info",
-      `역할 분리: creators=${creators.length}, appliers=${appliers.length}`
-    );
+    const creators = bots;
+    const appliers = bots;
+    log("info", `역할 분리: creators=${creators.length}, appliers=${appliers.length}`);
 
     let createdNow = 0;
     let appliedNow = 0;
@@ -127,7 +157,7 @@ export async function POST(request: NextRequest) {
     let approveSkippedNow = 0;
     let skippedSelfApply = 0;
     let createFailedNow = 0;
-    const candidateMeetings: Array<{ id: string; hostUid: string; title: string }> = [];
+    const candidateMeetings: MeetingCandidate[] = [];
 
     for (const uid of creators) {
       try {
@@ -168,12 +198,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    log(
-      "info",
-      `모임 생성 단계 완료: created=${createdNow}, failed=${createFailedNow}`
-    );
+    log(`info`, `모임 생성 단계 완료: created=${createdNow}, failed=${createFailedNow}`);
 
-    if (candidateMeetings.length > 0) {
+    // 순차 1명 처리 시에도 다른 선택 봇의 기존 open 모임에 신청 가능
+    const existingPeerMeetings = await loadPeerBotMeetings(approveScope);
+    const meetingById = new Map<string, MeetingCandidate>();
+    for (const m of [...existingPeerMeetings, ...candidateMeetings]) {
+      meetingById.set(m.id, m);
+    }
+    const applyPool = [...meetingById.values()];
+
+    if (applyPool.length > 0) {
       for (const uid of appliers) {
         const maxApplies = Math.max(0, cfg.applicationsPerRunPerBot);
         if (maxApplies === 0) {
@@ -181,7 +216,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const targetPool = candidateMeetings.filter((meeting) => meeting.hostUid !== uid);
+        const targetPool = applyPool.filter((meeting) => meeting.hostUid !== uid);
         if (targetPool.length === 0) {
           skippedSelfApply += 1;
           continue;
@@ -225,7 +260,10 @@ export async function POST(request: NextRequest) {
     } else {
       log("info", "신청 대상 모임 없음");
     }
-    log("info", `신청 단계 완료: applied=${appliedNow}, failed=${applyFailedNow}, selfSkipped=${skippedSelfApply}`);
+    log(
+      "info",
+      `신청 단계 완료: applied=${appliedNow}, failed=${applyFailedNow}, selfSkipped=${skippedSelfApply}`
+    );
 
     try {
       const approveReq = new NextRequest(new URL(request.url), {
@@ -234,7 +272,7 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
           "x-dashboard-internal": "1",
         },
-        body: JSON.stringify({ selectedBotUids: bots }),
+        body: JSON.stringify({ selectedBotUids: approveScope }),
       });
       const approveRes = await approveApplicationsPost(approveReq);
       const approveBody = (await approveRes.json()) as ApproveApplicationsApiResponse;
