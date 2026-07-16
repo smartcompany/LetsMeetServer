@@ -195,19 +195,29 @@
       ]
     }
   },
-  "ios_ad": "initial_ad",
-  "android_ad": "initial_ad",
   "ios_banner_ad": "banner_ad",
   "android_banner_ad": "banner_ad",
+  "ios_ads": [
+    {
+      "rewarded_test": 1
+    }
+  ],
+  "android_ads": [
+    {
+      "rewarded_test": 1
+    }
+  ],
   "ref": {
     "ios": {
       "initial_ad": "ca-app-pub-5520596727761259/9323926836",
       "rewarded_ad": "ca-app-pub-5520596727761259/5241271661",
+      "rewarded_test": "ca-app-pub-3940256099942544/1712485313",
       "banner_ad": "ca-app-pub-5520596727761259/2440272873"
     },
     "android": {
       "initial_ad": "ca-app-pub-5520596727761259/7157620423",
       "rewarded_ad": "ca-app-pub-5520596727761259/3882705925",
+      "rewarded_test": "ca-app-pub-3940256099942544/5224354917",
       "banner_ad": "ca-app-pub-5520596727761259/7127862465"
     }
   }
