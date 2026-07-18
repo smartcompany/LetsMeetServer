@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { pickStoreUrl } from '@/lib/applink';
+
 /**
- * CORS 프록시
- * Flutter 웹 등 다른 오리진에서 API 호출 시 브라우저가 요청을 허용하도록 헤더 추가
+ * /applink는 기기별 앱 스토어로 보내고,
+ * API 요청에는 Flutter 웹 등을 위한 CORS 헤더를 추가합니다.
  */
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +14,15 @@ const corsHeaders = {
 };
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === '/applink') {
+    const userAgent = request.headers.get('user-agent') ?? '';
+    const response = NextResponse.redirect(pickStoreUrl(userAgent), 302);
+    // CDN/공유 캐시가 기기별 리다이렉트를 섞지 않도록
+    response.headers.set('Vary', 'User-Agent');
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  }
+
   // API 라우트에만 CORS 적용
   if (!request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
@@ -33,5 +44,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/applink'],
 };
