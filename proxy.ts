@@ -40,6 +40,8 @@ export function proxy(request: NextRequest) {
   Object.entries(corsHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  // Dart http 패키지: charset 없으면 latin1 → 한글/이모지 깨짐 방지
+  response.headers.set('Content-Type', 'application/json; charset=utf-8');
   return response;
 }
 

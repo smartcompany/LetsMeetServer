@@ -9,12 +9,18 @@ import settings from './settings.json' assert { type: 'json' };
  */
 export async function GET() {
   try {
-    return NextResponse.json(settings, { status: 200 });
+    return NextResponse.json(settings, {
+      status: 200,
+      headers: {
+        // Dart http는 charset 없으면 latin1로 읽어 이모지/한글이 깨짐
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+    });
   } catch (e) {
     console.error('[settings] Failed to load settings:', e);
     return NextResponse.json(
       { error: 'Failed to load settings' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
