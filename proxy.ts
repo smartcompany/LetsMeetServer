@@ -40,8 +40,17 @@ export function proxy(request: NextRequest) {
   Object.entries(corsHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
-  // Dart http 패키지: charset 없으면 latin1 → 한글/이모지 깨짐 방지
-  response.headers.set('Content-Type', 'application/json; charset=utf-8');
+
+  // multipart 업로드는 Content-Type(boundary 포함)이 그대로여야 formData()가 동작한다.
+  // Next.js proxy에서 응답 Content-Type을 강제로 넣으면 요청 파싱이 깨질 수 있음.
+  const requestContentType = request.headers.get('content-type') ?? '';
+  const isMultipart = requestContentType
+    .toLowerCase()
+    .includes('multipart/form-data');
+  if (!isMultipart) {
+    // Dart http: charset 없으면 latin1 → 한글/이모지 깨짐 방지
+    response.headers.set('Content-Type', 'application/json; charset=utf-8');
+  }
   return response;
 }
 
