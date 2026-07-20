@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirebaseClientAuth } from '@/lib/firebase/client';
 import BotControlPanel from './components/BotControlPanel';
+import ProductAnalyticsPanel from './components/ProductAnalyticsPanel';
 
 type ReportRow = {
   id: string;
@@ -32,7 +33,7 @@ type TargetDetail = {
   image_urls: string[];
 };
 
-type DashboardTab = 'reports' | 'bot';
+type DashboardTab = 'reports' | 'bot' | 'analytics';
 
 function getVerdictLabel(v: string | null): string {
   if (!v) return '-';
@@ -324,12 +325,25 @@ export default function DashboardPage() {
           >
             AI 모임 컨트롤
           </button>
+          <button
+            type="button"
+            onClick={() => setTab('analytics')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 ${
+              tab === 'analytics'
+                ? 'border-zinc-800 text-zinc-900'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            사용자 실행 로그
+          </button>
         </div>
       </div>
 
       <main className="p-4 max-w-7xl mx-auto">
         {tab === 'bot' ? (
           <BotControlPanel />
+        ) : tab === 'analytics' ? (
+          <ProductAnalyticsPanel />
         ) : (
           <>
         <div className="flex flex-wrap items-center gap-4 mb-4">

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appendLog, toBotStateApiError } from "@/lib/bot/botStore";
-import meetingImagePoolJson from "./meeting-image-pool.json";
+import {
+  fetchRecentlyUsedMeetingImageUrls,
+  pickMeetingImageUrl,
+} from "@/lib/bot/meetingImagePool";
 import { supabase } from "@/lib/db/supabase";
 import promptTemplateSource from "./prompt.txt";
 import OpenAI from "openai";
@@ -78,31 +81,10 @@ type GeneratedMeetingCopy = {
   locationDetail: string;
 };
 
-type MeetingImagePool = {
-  defaults?: string[];
-  byMainCategory?: Record<string, string[]>;
-  bySubCategory?: Record<string, string[]>;
-};
-const meetingImagePool = meetingImagePoolJson as MeetingImagePool;
-
 async function loadPromptTemplate() {
   if (promptTemplateCache) return promptTemplateCache;
   promptTemplateCache = promptTemplateSource;
   return promptTemplateCache;
-}
-
-function pickMeetingImageUrl(mainCategory: string, subCategory: string) {
-  const pool = meetingImagePool;
-  const fromSub = pool.bySubCategory?.[subCategory] ?? [];
-  if (fromSub.length > 0) return pick(fromSub);
-
-  const fromMain = pool.byMainCategory?.[mainCategory] ?? [];
-  if (fromMain.length > 0) return pick(fromMain);
-
-  const fromDefaults = pool.defaults ?? [];
-  if (fromDefaults.length > 0) return pick(fromDefaults);
-
-  return null;
 }
 
 async function generateMeetingCopyWithAI(params: {
@@ -202,7 +184,12 @@ export async function POST(request: NextRequest) {
     const location = pick(LOCATIONS);
     const meetingDate = makeFutureDate();
     const hostName = (userRow.full_name as string) || "봇 사용자";
-    const pickedImageUrl = pickMeetingImageUrl(mainCategory, subCategory);
+    const recentlyUsedImageUrls = await fetchRecentlyUsedMeetingImageUrls();
+    const pickedImageUrl = pickMeetingImageUrl(
+      mainCategory,
+      subCategory,
+      recentlyUsedImageUrls,
+    );
 
     await log("info", `AI 문구 생성 시작: host=${hostForLog}`);
     let generated: GeneratedMeetingCopy;

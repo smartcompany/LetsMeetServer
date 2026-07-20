@@ -1,44 +1,65 @@
 {
+  "defaults": [],
   "byMainCategory": {
     "운동/액티비티": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/sports_activity.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/sports_activity.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/running_group.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/hiking_group.png"
     ],
     "댄스/취미 클래스": [
       "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/dance_hobby.png"
     ],
     "여행/나들이": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/travel_outing.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/travel_outing.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/hiking_group.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/city_walk_friends.png"
     ],
     "맛집/카페": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/food_cafe.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/food_cafe.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/brunch_table.png"
     ],
     "자기계발/스터디": [
       "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/self_dev_study.png",
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/self_dev_workspace.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/self_dev_workspace.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/book_study.png"
     ],
     "문화/예술": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/culture_art.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/culture_art.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/live_concert.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/photography_outdoor.png"
     ],
     "게임/엔터테인먼트": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/game_entertainment.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/game_entertainment.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/boardgame_friends.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/live_concert.png"
     ],
     "소셜/친목": [
       "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/social_friendship.png",
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/social_group.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/social_group.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/city_walk_friends.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/brunch_table.png"
     ],
     "힐링/라이프스타일": [
-      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/healing_lifestyle.png"
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/healing_lifestyle.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/yoga_class.png",
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/meditation_peaceful.png"
     ],
     "기타": [
       "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/others_creative.png"
     ]
   },
   "bySubCategory": {
-    "러닝": [],
+    "러닝": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/running_group.png"
+    ],
     "헬스": [],
-    "등산": [],
+    "등산": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/hiking_group.png"
+    ],
     "클라이밍": [],
-    "요가": [],
+    "요가": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/yoga_class.png"
+    ],
     "축구": [],
     "배드민턴": [],
     "살사": [],
@@ -46,33 +67,73 @@
     "힙합": [],
     "K-pop댄스": [],
     "탱고": [],
-    "국내여행": [],
-    "근교 드라이브": [],
-    "당일치기": [],
-    "맛집투어": [],
-    "식사모임": [],
-    "브런치": [],
+    "국내여행": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/travel_outing.png"
+    ],
+    "근교 드라이브": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/city_walk_friends.png"
+    ],
+    "당일치기": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/hiking_group.png"
+    ],
+    "맛집투어": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/food_cafe.png"
+    ],
+    "식사모임": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/food_cafe.png"
+    ],
+    "브런치": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/brunch_table.png"
+    ],
     "술 한잔": [],
     "디저트": [],
-    "독서": [],
-    "외국어": [],
+    "독서": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/book_study.png"
+    ],
+    "외국어": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/self_dev_study.png"
+    ],
     "재테크": [],
-    "코딩": [],
+    "코딩": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/self_dev_workspace.png"
+    ],
     "글쓰기": [],
-    "전시회": [],
-    "공연": [],
+    "전시회": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/culture_art.png"
+    ],
+    "공연": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/live_concert.png"
+    ],
     "영화": [],
-    "사진": [],
+    "사진": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/photography_outdoor.png"
+    ],
     "그림": [],
-    "보드게임": [],
-    "콘솔게임": [],
+    "보드게임": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/boardgame_friends.png"
+    ],
+    "콘솔게임": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/game_entertainment.png"
+    ],
     "온라인게임": [],
     "방탈출": [],
-    "신규친구": [],
-    "수다": [],
-    "동네모임": [],
-    "산책": [],
-    "명상": [],
-    "마인드풀니스": []
+    "신규친구": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/social_friendship.png"
+    ],
+    "수다": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/social_group.png"
+    ],
+    "동네모임": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/city_walk_friends.png"
+    ],
+    "산책": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/city_walk_friends.png"
+    ],
+    "명상": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/meditation_peaceful.png"
+    ],
+    "마인드풀니스": [
+      "https://hqztxxpafzkrwephbonq.supabase.co/storage/v1/object/public/lets-meet/meetingsBot/meditation_peaceful.png"
+    ]
   }
 }

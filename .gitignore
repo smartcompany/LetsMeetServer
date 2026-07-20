@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Bot meeting cover sources (uploaded to Supabase Storage via upload-meeting-images.mjs)
+/assets/meetingsBot/*.png
