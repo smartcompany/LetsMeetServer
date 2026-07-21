@@ -4,17 +4,14 @@ import {
   IOS_APP_STORE_WEB,
   PLAY_STORE_WEB,
 } from '@/lib/applink';
+import {
+  buildApplinkUrl,
+  getPublicOrigin,
+} from '@/lib/public-origin';
 import { buildMeetingLandingScript } from '@/lib/share-app-scheme';
 
-function getBaseUrl() {
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-}
-
 async function getMeeting(id: string) {
-  const base = getBaseUrl();
+  const base = getPublicOrigin();
   const res = await fetch(`${base}/api/meetings/${id}`, {
     cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
@@ -31,7 +28,7 @@ export async function generateMetadata({
   const { id } = await params;
   const meeting = await getMeeting(id);
   if (!meeting) return { title: '이음터 - 모임을 찾을 수 없습니다' };
-  const base = getBaseUrl();
+  const base = getPublicOrigin();
   return {
     title: `${meeting.title} - 이음터`,
     description:
@@ -61,10 +58,9 @@ export default async function MeetingPage({
     notFound();
   }
 
-  const base = getBaseUrl();
-  const appDeepLink = `letsmeet://meeting/${id}`;
-  const downloadUrl = `${base}/applink`;
+  const downloadUrl = buildApplinkUrl();
   const landingScript = buildMeetingLandingScript(id, downloadUrl);
+  const appDeepLink = `letsmeet://meeting/${id}`;
 
   const title = meeting.title || '모임';
   const description = meeting.short_description || meeting.description || '';
@@ -125,8 +121,8 @@ export default async function MeetingPage({
               marginBottom: 24,
             }}
           >
-            앱이 설치되어 있으면 자동으로 열립니다. 열리지 않으면 스토어로
-            이동합니다.
+            앱이 설치되어 있으면 자동으로 열립니다. 열리지 않으면 잠시 후
+            App Store로 이동합니다.
           </p>
           <a
             href={appDeepLink}
@@ -141,9 +137,27 @@ export default async function MeetingPage({
               fontWeight: 600,
               fontSize: 16,
               textDecoration: 'none',
+              marginBottom: 12,
             }}
           >
             앱에서 열기
+          </a>
+          <a
+            href={downloadUrl}
+            style={{
+              display: 'inline-block',
+              width: '100%',
+              padding: '14px 24px',
+              backgroundColor: '#F3F4F6',
+              color: '#212121',
+              borderRadius: 12,
+              textAlign: 'center',
+              fontWeight: 600,
+              fontSize: 16,
+              textDecoration: 'none',
+            }}
+          >
+            앱 다운로드
           </a>
           <noscript>
             <p

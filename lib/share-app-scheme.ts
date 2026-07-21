@@ -16,45 +16,53 @@ export function buildMeetingLandingScript(
   const appSchemeUrl = buildMeetingAppSchemeUrl(meetingId);
   return `
 (function () {
-  var appScheme = ${JSON.stringify(appSchemeUrl)};
-  var downloadUrl = ${JSON.stringify(downloadUrl)};
-  var ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-  var isMobile = /android|iphone|ipad|ipod/i.test(ua);
-  var switchedToApp = false;
+  function run() {
+    var appScheme = ${JSON.stringify(appSchemeUrl)};
+    var downloadUrl = ${JSON.stringify(downloadUrl)};
+    var ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+    var isMobile = /android|iphone|ipad|ipod/i.test(ua);
+    var switchedToApp = false;
 
-  function onHidden() {
-    if (document.visibilityState === "hidden") {
-      switchedToApp = true;
+    function onHidden() {
+      if (document.visibilityState === "hidden") {
+        switchedToApp = true;
+      }
     }
-  }
 
-  function redirectToDownload() {
-    if (switchedToApp) { return; }
-    window.location.replace(downloadUrl);
-  }
-
-  if (!isMobile) {
-    redirectToDownload();
-    return;
-  }
-
-  document.addEventListener("visibilitychange", onHidden, { passive: true });
-  window.addEventListener("pagehide", onHidden, { passive: true });
-
-  var iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.setAttribute("aria-hidden", "true");
-  iframe.src = appScheme;
-  document.body.appendChild(iframe);
-
-  window.setTimeout(function () {
-    document.removeEventListener("visibilitychange", onHidden);
-    window.removeEventListener("pagehide", onHidden);
-    if (iframe && iframe.parentNode) {
-      iframe.parentNode.removeChild(iframe);
+    function redirectToDownload() {
+      if (switchedToApp) { return; }
+      window.location.replace(downloadUrl);
     }
-    redirectToDownload();
-  }, 1000);
+
+    if (!isMobile) {
+      redirectToDownload();
+      return;
+    }
+
+    document.addEventListener("visibilitychange", onHidden, { passive: true });
+    window.addEventListener("pagehide", onHidden, { passive: true });
+
+    var iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.src = appScheme;
+    document.body.appendChild(iframe);
+
+    window.setTimeout(function () {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", onHidden);
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      redirectToDownload();
+    }, 1000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
 })();
 `.trim();
 }
