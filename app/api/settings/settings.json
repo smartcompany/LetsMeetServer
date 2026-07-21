@@ -220,5 +220,6 @@
       "rewarded_test": "ca-app-pub-3940256099942544/5224354917",
       "banner_ad": "ca-app-pub-5520596727761259/7127862465"
     }
-  }
+  },
+  "download_url": "https://lets-meet-server.vercel.app/applink"
 }
