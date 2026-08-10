@@ -7,11 +7,12 @@ export function buildMeetingAppSchemeUrl(meetingId: string): string {
 
 /**
  * 모바일: iframe 으로 앱 스킴 시도 → 실패 시 /applink (UA별 스토어 302)
- * 데스크톱: 바로 /applink
+ * 데스크톱(Mac/PC): Flutter 웹(lets-meet-lime) 모임 페이지로 이동
  */
 export function buildMeetingLandingScript(
   meetingId: string,
   downloadUrl: string,
+  webMeetingUrl: string,
 ): string {
   const appSchemeUrl = buildMeetingAppSchemeUrl(meetingId);
   return `
@@ -19,6 +20,7 @@ export function buildMeetingLandingScript(
   function run() {
     var appScheme = ${JSON.stringify(appSchemeUrl)};
     var downloadUrl = ${JSON.stringify(downloadUrl)};
+    var webMeetingUrl = ${JSON.stringify(webMeetingUrl)};
     var ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
     var isMobile = /android|iphone|ipad|ipod/i.test(ua);
     var switchedToApp = false;
@@ -34,8 +36,9 @@ export function buildMeetingLandingScript(
       window.location.replace(downloadUrl);
     }
 
+    // Mac/PC → 웹 앱
     if (!isMobile) {
-      redirectToDownload();
+      window.location.replace(webMeetingUrl);
       return;
     }
 

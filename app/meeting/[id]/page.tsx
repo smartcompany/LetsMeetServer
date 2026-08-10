@@ -6,6 +6,7 @@ import {
 } from '@/lib/applink';
 import {
   buildApplinkUrl,
+  buildWebMeetingUrl,
   getPublicOrigin,
 } from '@/lib/public-origin';
 import { buildMeetingLandingScript } from '@/lib/share-app-scheme';
@@ -59,7 +60,12 @@ export default async function MeetingPage({
   }
 
   const downloadUrl = buildApplinkUrl();
-  const landingScript = buildMeetingLandingScript(id, downloadUrl);
+  const webMeetingUrl = buildWebMeetingUrl(id);
+  const landingScript = buildMeetingLandingScript(
+    id,
+    downloadUrl,
+    webMeetingUrl,
+  );
   const appDeepLink = `letsmeet://meeting/${id}`;
 
   const title = meeting.title || '모임';
@@ -121,17 +127,35 @@ export default async function MeetingPage({
               marginBottom: 24,
             }}
           >
-            앱이 설치되어 있으면 자동으로 열립니다. 열리지 않으면 잠시 후
-            App Store로 이동합니다.
+            모바일에서는 앱이 있으면 자동으로 열리고, 없으면 스토어로
+            이동합니다. PC·Mac에서는 웹 앱으로 이동합니다.
           </p>
           <a
-            href={appDeepLink}
+            href={webMeetingUrl}
             style={{
               display: 'inline-block',
               width: '100%',
               padding: '14px 24px',
               backgroundColor: '#2196F3',
               color: 'white',
+              borderRadius: 12,
+              textAlign: 'center',
+              fontWeight: 600,
+              fontSize: 16,
+              textDecoration: 'none',
+              marginBottom: 12,
+            }}
+          >
+            웹에서 열기
+          </a>
+          <a
+            href={appDeepLink}
+            style={{
+              display: 'inline-block',
+              width: '100%',
+              padding: '14px 24px',
+              backgroundColor: '#F3F4F6',
+              color: '#212121',
               borderRadius: 12,
               textAlign: 'center',
               fontWeight: 600,

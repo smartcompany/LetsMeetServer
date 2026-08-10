@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pickStoreUrl } from '@/lib/applink';
 
 /**
- * /applink는 기기별 앱 스토어로 보내고,
+ * /applink는 기기별 목적지로 보내고 (모바일 스토어 / PC·Mac 웹),
  * API 요청에는 Flutter 웹 등을 위한 CORS 헤더를 추가합니다.
  */
 const corsHeaders = {
