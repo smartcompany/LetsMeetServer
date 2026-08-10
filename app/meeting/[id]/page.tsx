@@ -121,6 +121,7 @@ export default async function MeetingPage({
             </p>
           )}
           <p
+            id="meeting-hint"
             style={{
               fontSize: 14,
               color: '#9E9E9E',
@@ -131,9 +132,10 @@ export default async function MeetingPage({
             이동합니다. PC·Mac에서는 웹 앱으로 이동합니다.
           </p>
           <a
+            id="meeting-btn-web"
             href={webMeetingUrl}
             style={{
-              display: 'inline-block',
+              display: 'none',
               width: '100%',
               padding: '14px 24px',
               backgroundColor: '#2196F3',
@@ -149,13 +151,14 @@ export default async function MeetingPage({
             웹에서 열기
           </a>
           <a
+            id="meeting-btn-app"
             href={appDeepLink}
             style={{
-              display: 'inline-block',
+              display: 'none',
               width: '100%',
               padding: '14px 24px',
-              backgroundColor: '#F3F4F6',
-              color: '#212121',
+              backgroundColor: '#2196F3',
+              color: 'white',
               borderRadius: 12,
               textAlign: 'center',
               fontWeight: 600,
@@ -167,9 +170,10 @@ export default async function MeetingPage({
             앱에서 열기
           </a>
           <a
+            id="meeting-btn-download"
             href={downloadUrl}
             style={{
-              display: 'inline-block',
+              display: 'none',
               width: '100%',
               padding: '14px 24px',
               backgroundColor: '#F3F4F6',
